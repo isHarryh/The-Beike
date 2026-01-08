@@ -303,6 +303,27 @@ class TermInfo extends BaseDataClass {
     return {'year': year, 'season': season};
   }
 
+  factory TermInfo.autoDetect() {
+    final now = DateTime.now();
+    final month = now.month;
+    String year;
+    int season;
+
+    if ([1, 8, 9, 10, 11, 12].contains(month)) {
+      if (month == 1) {
+        year = '${now.year - 1}-${now.year}';
+      } else {
+        year = '${now.year}-${now.year + 1}';
+      }
+      season = 1;
+    } else {
+      year = '${now.year - 1}-${now.year}';
+      season = 2;
+    }
+
+    return TermInfo(year: year, season: season);
+  }
+
   factory TermInfo.fromJson(Map<String, dynamic> json) =>
       _$TermInfoFromJson(json);
   Map<String, dynamic> toJson() => _$TermInfoToJson(this);

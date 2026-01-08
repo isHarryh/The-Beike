@@ -12,9 +12,22 @@ class FilterBodyBuilder {
     double minAvailableHours,
     double maxAvailableHours,
   ) {
+    // Validate and reset filter values if they're not in the available items
+    final validCourseType =
+        filter.courseType != null &&
+            availableCourseTypes.contains(filter.courseType)
+        ? filter.courseType
+        : null;
+    final validCourseCategory =
+        filter.courseCategory != null &&
+            availableCourseCategories.contains(filter.courseCategory)
+        ? filter.courseCategory
+        : null;
+
     return [
       DropdownButtonFormField<String>(
-        initialValue: filter.courseType,
+        isExpanded: true,
+        initialValue: validCourseType,
         decoration: InputDecoration(
           labelText: '课程性质',
           border: const OutlineInputBorder(),
@@ -24,7 +37,7 @@ class FilterBodyBuilder {
           ...availableCourseTypes.map(
             (type) => DropdownMenuItem<String>(
               value: type,
-              child: Text(type, overflow: TextOverflow.fade),
+              child: Text(type, overflow: TextOverflow.ellipsis),
             ),
           ),
         ],
@@ -38,7 +51,8 @@ class FilterBodyBuilder {
       const SizedBox(height: 24),
 
       DropdownButtonFormField<String>(
-        initialValue: filter.courseCategory,
+        isExpanded: true,
+        initialValue: validCourseCategory,
         decoration: InputDecoration(
           labelText: '课程类别',
           border: const OutlineInputBorder(),
@@ -48,7 +62,7 @@ class FilterBodyBuilder {
           ...availableCourseCategories.map(
             (category) => DropdownMenuItem<String>(
               value: category,
-              child: Text(category, overflow: TextOverflow.fade),
+              child: Text(category, overflow: TextOverflow.ellipsis),
             ),
           ),
         ],

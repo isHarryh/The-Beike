@@ -209,6 +209,52 @@ class _CourseListPageState extends State<CourseListPage> {
     }
   }
 
+  Future<void> _syncSelectedCoursesAfterSubmit() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final allSelectedCourses = await _serviceProvider.coursesService
+          .getSelectedCourses(widget.termInfo);
+
+      _selectedCourseIds = allSelectedCourses
+          .map((course) => course.courseId)
+          .toList();
+
+      final selectionState = _serviceProvider.coursesService
+          .getCourseSelectionState();
+
+      final remainingWantedCourses = selectionState.wantedCourses.where((
+        course,
+      ) {
+        return !_selectedCourseIds.contains(course.courseId);
+      }).toList();
+
+      final updatedState = CourseSelectionState(
+        termInfo: selectionState.termInfo,
+        wantedCourses: remainingWantedCourses,
+      );
+      _serviceProvider.coursesService.updateCourseSelectionState(updatedState);
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   void _performSearch(String query) {
     setState(() {
       _currentSearchQuery = query;
@@ -820,8 +866,8 @@ class _CourseListPageState extends State<CourseListPage> {
                   );
 
                   if (mounted) {
-                    // Ensure refreshed
-                    setState(() {});
+                    await _syncSelectedCoursesAfterSubmit();
+                    await _loadCourses();
                   }
                 },
                 child: Padding(

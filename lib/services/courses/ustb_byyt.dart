@@ -842,7 +842,7 @@ class UstbByytService extends BaseCoursesService {
     try {
       final data = json.decode(response.body);
 
-      if (data['jg'] != 1) {
+      if (data['jg'] != 1 && data['jg'] != '1') {
         throw CourseServiceBadRequest('${data['message'] ?? 'No msg'}');
       }
       return true;

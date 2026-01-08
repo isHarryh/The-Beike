@@ -26,7 +26,7 @@ class CourseDetailCard extends StatefulWidget {
 }
 
 class _CourseDetailCardState extends State<CourseDetailCard>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   final ServiceProvider _serviceProvider = ServiceProvider.instance;
 
   late AnimationController _expansionController;
@@ -34,6 +34,9 @@ class _CourseDetailCardState extends State<CourseDetailCard>
   late Animation<double> _expansionAnimation;
   late Animation<double> _titleOpacityAnimation;
   late Animation<Offset> _titleSlideAnimation;
+
+  @override
+  bool get wantKeepAlive => widget.isExpanded;
 
   List<CourseInfo> _courseDetails = [];
   bool _isLoadingDetails = false;
@@ -85,6 +88,7 @@ class _CourseDetailCardState extends State<CourseDetailCard>
   void didUpdateWidget(CourseDetailCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.isExpanded != oldWidget.isExpanded) {
+      updateKeepAlive();
       if (widget.isExpanded) {
         _expansionController.forward();
         _titleController.forward();
@@ -198,6 +202,7 @@ class _CourseDetailCardState extends State<CourseDetailCard>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return ClipRect(
       child: AnimatedBuilder(
         animation: _expansionAnimation,

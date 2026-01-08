@@ -44,27 +44,6 @@ class _ExamPageState extends State<ExamPage> {
     }
   }
 
-  TermInfo _getCurrentTerm() {
-    final now = DateTime.now();
-    final month = now.month;
-    String year;
-    int season;
-
-    if ([8, 9, 10, 11, 12].contains(month) || month == 1) {
-      if (month == 1) {
-        year = '${now.year - 1}-${now.year}';
-      } else {
-        year = '${now.year}-${now.year + 1}';
-      }
-      season = 1;
-    } else {
-      year = '${now.year - 1}-${now.year}';
-      season = 2;
-    }
-
-    return TermInfo(year: year, season: season);
-  }
-
   Future<void> _loadExams({bool forceRefresh = false}) async {
     final service = _serviceProvider.coursesService;
 
@@ -85,7 +64,7 @@ class _ExamPageState extends State<ExamPage> {
       });
 
       try {
-        final currentTerm = _getCurrentTerm();
+        final currentTerm = TermInfo.autoDetect();
         final exams = await service.getExams(currentTerm);
         if (mounted) {
           setState(() {

@@ -34,27 +34,6 @@ class _CourseSelectionPageState extends State<CourseSelectionPage> {
     super.dispose();
   }
 
-  TermInfo _getCurrentTerm() {
-    final now = DateTime.now();
-    final month = now.month;
-    String year;
-    int season;
-
-    if ([8, 9, 10, 11, 12].contains(month) || month == 1) {
-      if (month == 1) {
-        year = '${now.year - 1}-${now.year}';
-      } else {
-        year = '${now.year}-${now.year + 1}';
-      }
-      season = 1;
-    } else {
-      year = '${now.year - 1}-${now.year}';
-      season = 2;
-    }
-
-    return TermInfo(year: year, season: season);
-  }
-
   void _onServiceStatusChanged() {
     if (mounted && _serviceProvider.coursesService.isOnline) {
       setState(() {
@@ -78,7 +57,7 @@ class _CourseSelectionPageState extends State<CourseSelectionPage> {
       setState(() {
         _terms = terms;
         if (terms.isNotEmpty) {
-          final currentTerm = _getCurrentTerm();
+          final currentTerm = TermInfo.autoDetect();
           TermInfo? selectedTerm;
           for (final term in terms) {
             if (term.year == currentTerm.year &&
