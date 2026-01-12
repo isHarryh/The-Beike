@@ -3,6 +3,7 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'utils/app_bar.dart';
+import 'utils/back_handle.dart';
 import 'pages/index.dart';
 import 'pages/courses/selection/index.dart';
 import 'pages/courses/curriculum/index.dart';
@@ -172,7 +173,6 @@ class MainLayout extends StatefulWidget {
 class _MainLayoutState extends State<MainLayout> {
   bool _isWideScreen = false;
   Widget? _cachedChild;
-  bool _showMore = false;
 
   // GlobalKey to maintain page state during screen size transitions
   // Using an instance key instead of a static map prevents duplicate key errors
@@ -199,18 +199,13 @@ class _MainLayoutState extends State<MainLayout> {
     return '/';
   }
 
-  void _navigateToPage(String path, {bool isDrawer = false}) {
+  void _navigateToPage(String path) {
     if (context.mounted && _currentPath != path) {
       if (_isWideScreen) {
-        // For wide screen, pop all and push new route to avoid history accumulation and smooth transition
-        context.router.popUntilRoot();
+        context.router.replacePath('/');
         context.router.pushPath(path);
       } else {
-        // For narrow screen, use normal navigation
         context.router.pushPath(path);
-      }
-
-      if (isDrawer) {
         Navigator.pop(context);
       }
     }
@@ -218,58 +213,41 @@ class _MainLayoutState extends State<MainLayout> {
 
   @override
   Widget build(BuildContext context) {
-    // Cache the child to prevent unnecessary rebuilds when switching layouts
     _cachedChild ??= widget.child;
-    if (_cachedChild != widget.child) {
-      _cachedChild = widget.child;
-    }
 
+    Widget content;
     if (_isWideScreen) {
-      return _buildWideScreenLayout();
-    } else {
-      return _buildNarrowScreenLayout();
-    }
-  }
-
-  Widget _buildWideScreenLayout() {
-    return Scaffold(
-      body: Row(
-        children: [
-          _SideNavigation(
-            isDrawer: false,
-            currentPath: _currentPath,
-            onNavigate: _navigateToPage,
-            showMore: _showMore,
-            onToggleMore: () => setState(() => _showMore = !_showMore),
-          ),
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              transitionBuilder: (child, animation) {
-                return FadeTransition(opacity: animation, child: child);
-              },
+      content = Scaffold(
+        body: Row(
+          children: [
+            _SideNavigation(
+              isDrawer: false,
+              currentPath: _currentPath,
+              onNavigate: _navigateToPage,
+            ),
+            Expanded(
               child: KeyedSubtree(key: _contentKey, child: _cachedChild!),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNarrowScreenLayout() {
-    return Scaffold(
-      appBar: const TopAppBar(),
-      drawer: Drawer(
-        child: _SideNavigation(
-          isDrawer: true,
-          currentPath: _currentPath,
-          onNavigate: (path) => _navigateToPage(path, isDrawer: true),
-          showMore: _showMore,
-          onToggleMore: () => setState(() => _showMore = !_showMore),
+          ],
         ),
-      ),
-      body: KeyedSubtree(key: _contentKey, child: _cachedChild!),
-    );
+      );
+    } else {
+      content = Scaffold(
+        appBar: const TopAppBar(),
+        drawer: Drawer(
+          child: _SideNavigation(
+            isDrawer: true,
+            currentPath: _currentPath,
+            onNavigate: _navigateToPage,
+          ),
+        ),
+        body: KeyedSubtree(key: _contentKey, child: _cachedChild!),
+      );
+    }
+
+    return _currentPath == '/'
+        ? DoubleBackToExitWrapper(child: content)
+        : CommonPopWrapper(child: content);
   }
 }
 
@@ -277,15 +255,11 @@ class _SideNavigation extends StatefulWidget {
   final bool isDrawer;
   final String currentPath;
   final void Function(String path) onNavigate;
-  final bool showMore;
-  final VoidCallback onToggleMore;
 
   const _SideNavigation({
     required this.isDrawer,
     required this.currentPath,
     required this.onNavigate,
-    required this.showMore,
-    required this.onToggleMore,
   });
 
   @override
@@ -294,23 +268,19 @@ class _SideNavigation extends StatefulWidget {
 
 class _SideNavigationState extends State<_SideNavigation> {
   late final PageController _pageController;
+  late bool _showMore;
+
+  static const Set<String> _initiallyShowMorePaths = {
+    '/more/anno',
+    '/more/update',
+    '/more/settings',
+  };
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: widget.showMore ? 1 : 0);
-  }
-
-  @override
-  void didUpdateWidget(covariant _SideNavigation oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.showMore != widget.showMore) {
-      _pageController.animateToPage(
-        widget.showMore ? 1 : 0,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOutCubic,
-      );
-    }
+    _showMore = _initiallyShowMorePaths.contains(widget.currentPath);
+    _pageController = PageController(initialPage: _showMore ? 1 : 0);
   }
 
   @override
@@ -424,10 +394,19 @@ class _SideNavigationState extends State<_SideNavigation> {
           const Divider(),
           _buildNavItem(
             context: context,
-            icon: widget.showMore ? Icons.arrow_back : Icons.more_horiz,
-            title: widget.showMore ? '收起' : '更多',
+            icon: _showMore ? Icons.arrow_back : Icons.more_horiz,
+            title: _showMore ? '收起' : '更多',
             isSelected: false,
-            onTap: widget.onToggleMore,
+            onTap: () {
+              setState(() {
+                _showMore = !_showMore;
+              });
+              _pageController.animateToPage(
+                _showMore ? 1 : 0,
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOutCubic,
+              );
+            },
           ),
           const SizedBox(height: 8),
         ],
