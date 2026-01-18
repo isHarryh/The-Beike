@@ -244,6 +244,42 @@ class DrcomNetService extends BaseNetService {
   }
 
   @override
+  Future<void> doRenameMac({
+    required String macAddress,
+    required String terminalName,
+  }) async {
+    await refreshCsrfFrom('Self/service/myMac');
+
+    final csrfToken = NetDashboardSessionStateExtension.getCsrf(
+      cachedSessionState!,
+      'Self/service/updateTerminalName',
+    );
+
+    final response = await _post(
+      'Self/service/updateTerminalName',
+      data: {
+        't': Random().nextDouble().toString(),
+        'macAddress': macAddress.toUpperCase(),
+        'terminalName': terminalName,
+        'ajaxCsrfToken': csrfToken,
+      },
+    );
+    NetServiceException.raiseForStatus(response.statusCode, setOffline);
+    _updateCookie(response);
+
+    try {
+      final jsonMap = json.decode(response.body);
+      final state = jsonMap['state'];
+      if (state != 'success') {
+        throw NetServiceException('Failed to rename device: $state');
+      }
+    } catch (e) {
+      if (e is NetServiceException) rethrow;
+      throw NetServiceBadResponse('Failed to parse rename response', e);
+    }
+  }
+
+  @override
   Future<List<MacDevice>> getDeviceList() async {
     await refreshCsrfFrom('Self/service/myMac');
 

@@ -1016,7 +1016,21 @@ class _NetDashboardPageState extends State<NetDashboardPage>
             color: theme.colorScheme.primary,
             onPressed: () => showDialog(
               context: context,
-              builder: (context) => NetDeviceShowDialog(device: device),
+              builder: (context) => NetDeviceShowDialog(
+                device: device,
+                onRename: (newName) async {
+                  try {
+                    await serviceProvider.netService.renameMac(
+                      device.mac,
+                      terminalName: newName,
+                    );
+                  } catch (_) {
+                    return false;
+                  }
+                  await _refreshDevices();
+                  return true;
+                },
+              ),
             ),
             icon: const Icon(Icons.info_outline),
             tooltip: '详情',

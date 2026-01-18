@@ -36,6 +36,11 @@ abstract class BaseNetService with BaseService {
 
   Future<void> doUnbindMac(String macAddress);
 
+  Future<void> doRenameMac({
+    required String macAddress,
+    required String terminalName,
+  });
+
   Future<void> doChangePassword({
     required String oldPassword,
     required String newPassword,
@@ -175,6 +180,19 @@ abstract class BaseNetService with BaseService {
     }
 
     await doUnbindMac(normalizedMac);
+  }
+
+  Future<void> renameMac(String mac, {required String terminalName}) async {
+    if (isOffline) {
+      throw const NetServiceOffline();
+    }
+
+    final normalizedMac = normalizeMac(mac);
+    if (normalizedMac == null) {
+      throw const NetServiceException('Invalid MAC address');
+    }
+
+    await doRenameMac(macAddress: normalizedMac, terminalName: terminalName);
   }
 
   @protected
