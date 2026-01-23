@@ -37,7 +37,7 @@ extension NetDashboardSessionStateExtension on NetDashboardSessionState {
     dotAll: true,
   );
 
-  static NetDashboardSessionState parseFromHtml(String html, String cookie) {
+  static NetDashboardSessionState parseFromHtml(String html) {
     final checkCodeMatch = checkCodeRegex.firstMatch(html);
     final checkCode = checkCodeMatch?.group(1)?.trim();
 
@@ -53,7 +53,6 @@ extension NetDashboardSessionStateExtension on NetDashboardSessionState {
     return NetDashboardSessionState(
       checkCode: checkCode,
       needRandomCode: needRandomCode,
-      cookie: cookie,
     );
   }
 
@@ -89,7 +88,6 @@ extension NetDashboardSessionStateExtension on NetDashboardSessionState {
     return NetDashboardSessionState(
       checkCode: state.checkCode,
       needRandomCode: state.needRandomCode,
-      cookie: state.cookie,
       csrfTokens: newTokens,
     );
   }

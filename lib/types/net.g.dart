@@ -12,7 +12,6 @@ NetDashboardSessionState _$NetDashboardSessionStateFromJson(
     NetDashboardSessionState(
         checkCode: json['checkCode'] as String,
         needRandomCode: json['needRandomCode'] as bool,
-        cookie: json['cookie'] as String,
         csrfTokens: (json['csrfTokens'] as Map<String, dynamic>?)?.map(
           (k, e) => MapEntry(k, e as String),
         ),
@@ -31,7 +30,6 @@ Map<String, dynamic> _$NetDashboardSessionStateToJson(
   ),
   'checkCode': instance.checkCode,
   'needRandomCode': instance.needRandomCode,
-  'cookie': instance.cookie,
   'csrfTokens': instance.csrfTokens,
 };
 

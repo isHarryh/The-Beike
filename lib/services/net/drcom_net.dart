@@ -32,9 +32,7 @@ class DrcomNetService extends BaseNetService {
   }
 
   @override
-  String get defaultBaseUrl => 'http://zifuwu.ustb.edu.cn:8080';
-  // Alternative VPN URL:
-  // 'https://vpn.ustb.edu.cn/http-8080/77726476706e69737468656265737421a2a713d275603c1e2858c7fb';
+  String get defaultBaseUrl => 'https://zifuwu.ustb.edu.cn';
 
   @override
   set baseUrl(String url) {
@@ -50,12 +48,8 @@ class DrcomNetService extends BaseNetService {
     );
     NetServiceException.raiseForStatus(response.statusCode!);
 
-    final cookies = await _cookieJar.loadForRequest(Uri.parse(baseUrl));
-    final cookieString = cookies.map((c) => '${c.name}=${c.value}').join('; ');
-
     final sessionState = NetDashboardSessionStateExtension.parseFromHtml(
       response.data as String,
-      cookieString,
     );
 
     await getCodeImage(); // This request is to make the session valid
@@ -342,72 +336,81 @@ class DrcomNetService extends BaseNetService {
   }
 
   @override
-  Future<void> doChangePassword({
+  Future<void> changePassword({
     required String oldPassword,
     required String newPassword,
   }) async {
     if (isOffline) {
       throw const NetServiceOffline();
     }
-    await refreshCsrfFrom('Self/setting/changePassword');
-
-    final csrfToken = NetDashboardSessionStateExtension.getCsrf(
-      cachedSessionState!,
-      'changePasswordForm',
-    );
-
-    final response = await _dio.post(
-      '/Self/v2/password',
-      data: {
-        'csrftoken': csrfToken,
-        'oldPassword': oldPassword,
-        'newPassword': newPassword,
-        'confirmPassword': newPassword,
-      },
-      options: Options(contentType: 'application/json; charset=utf-8'),
-    );
-    NetServiceException.raiseForStatus(response.statusCode!, setOffline);
 
     try {
+      await refreshCsrfFrom('Self/setting/changePassword');
+
+      final csrfToken = NetDashboardSessionStateExtension.getCsrf(
+        cachedSessionState!,
+        'changePasswordForm',
+      );
+
+      final response = await _dio.post(
+        '/Self/v2/password',
+        data: {
+          'csrftoken': csrfToken,
+          'oldPassword': oldPassword,
+          'newPassword': newPassword,
+          'confirmPassword': newPassword,
+        },
+        options: Options(contentType: 'application/json; charset=utf-8'),
+      );
+      NetServiceException.raiseForStatus(response.statusCode!, setOffline);
+
       final decoded = response.data;
       if (decoded['state'] != 'success') {
         throw NetServiceBadResponse(
           '${decoded['data'] ?? 'Unknown error while changing password'}',
         );
       }
+    } on NetServiceException {
+      rethrow;
     } catch (e) {
-      if (e is NetServiceException) rethrow;
-      throw NetServiceBadResponse(
-        'Failed to parse password change response',
-        e,
-      );
+      throw NetServiceNetworkError('Failed to change password', e);
     }
   }
 
   @override
-  Future<void> doChangeConsumeProtect({int? maxConsume}) async {
-    await refreshCsrfFrom('Self/service/consumeProtect');
-
-    final csrfToken = NetDashboardSessionStateExtension.getCsrf(
-      cachedSessionState!,
-      'form',
-    );
-
-    maxConsume ??= 999999;
-    maxConsume = maxConsume.clamp(0, 999999);
-
-    final response = await _dio.post(
-      '/Self/service/changeConsumeProtect',
-      data: {'csrftoken': csrfToken, 'consumeLimit': maxConsume.toString()},
-    );
-    // Expect 302 redirect to /Self/service/consumeProtect
-    if (response.statusCode == 302) {
-      final location = response.headers.value('location') ?? '';
-      if (location.contains('consumeProtect')) {
-        return;
-      }
+  Future<void> changeConsumeProtect({int? maxConsume}) async {
+    if (isOffline) {
+      throw const NetServiceOffline();
     }
-    NetServiceException.raiseForStatus(response.statusCode!, setOffline);
+
+    try {
+      await refreshCsrfFrom('Self/service/consumeProtect');
+
+      final csrfToken = NetDashboardSessionStateExtension.getCsrf(
+        cachedSessionState!,
+        'form',
+      );
+
+      maxConsume ??= 999999;
+      maxConsume = maxConsume.clamp(0, 999999);
+
+      final response = await _dio.post(
+        '/Self/service/changeConsumeProtect',
+        data: {'csrftoken': csrfToken, 'consumeLimit': maxConsume.toString()},
+      );
+      // Expect 302 redirect to /Self/service/consumeProtect
+      if (response.statusCode == 302) {
+        final location = response.headers.value('location') ?? '';
+        if (location.contains('consumeProtect')) {
+          return;
+        }
+      }
+      NetServiceException.raiseForStatus(response.statusCode!, setOffline);
+    } on NetServiceException {
+      rethrow;
+    } catch (e) {
+      throw NetServiceNetworkError('Failed to change consume protect', e);
+    }
   }
 
   @override

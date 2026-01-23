@@ -41,12 +41,12 @@ abstract class BaseNetService with BaseService {
     required String terminalName,
   });
 
-  Future<void> doChangePassword({
+  Future<void> changePassword({
     required String oldPassword,
     required String newPassword,
   });
 
-  Future<void> doChangeConsumeProtect({int? maxConsume});
+  Future<void> changeConsumeProtect({int? maxConsume});
 
   Future<List<MonthlyBill>> getMonthPay({required int year});
 
@@ -123,40 +123,6 @@ abstract class BaseNetService with BaseService {
     } finally {
       _cachedSessionState = null;
       setOffline();
-    }
-  }
-
-  Future<void> changePassword({
-    required String oldPassword,
-    required String newPassword,
-  }) async {
-    if (isOffline) {
-      throw const NetServiceOffline();
-    }
-
-    try {
-      await doChangePassword(
-        oldPassword: oldPassword,
-        newPassword: newPassword,
-      );
-    } on NetServiceException {
-      rethrow;
-    } catch (e) {
-      throw NetServiceNetworkError('Failed to change password', e);
-    }
-  }
-
-  Future<void> changeConsumeProtect({required int? maxConsume}) async {
-    if (isOffline) {
-      throw const NetServiceOffline();
-    }
-
-    try {
-      await doChangeConsumeProtect(maxConsume: maxConsume);
-    } on NetServiceException {
-      rethrow;
-    } catch (e) {
-      throw NetServiceNetworkError('Failed to change consume protect', e);
     }
   }
 

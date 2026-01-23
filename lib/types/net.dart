@@ -44,13 +44,11 @@ extension NetworkStatusExtension on NetworkStatus {
 class NetDashboardSessionState extends BaseDataClass {
   final String checkCode;
   final bool needRandomCode;
-  final String cookie;
   final Map<String, String> csrfTokens;
 
   NetDashboardSessionState({
     required this.checkCode,
     required this.needRandomCode,
-    required this.cookie,
     Map<String, String>? csrfTokens,
   }) : csrfTokens = csrfTokens ?? {};
 
@@ -59,7 +57,6 @@ class NetDashboardSessionState extends BaseDataClass {
     return {
       'checkCode': checkCode,
       'needRandomCode': needRandomCode,
-      'cookie': cookie,
       'csrfTokens': csrfTokens,
     };
   }
