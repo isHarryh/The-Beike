@@ -13,6 +13,8 @@ import '/types/sync.dart';
 import '/types/preferences.dart';
 
 class ServiceProvider extends ChangeNotifier {
+  final List<VoidCallback> _serviceListenerDisposers = [];
+
   // Course Service
   late BaseCoursesService _coursesService;
 
@@ -34,6 +36,10 @@ class ServiceProvider extends ChangeNotifier {
     _netService = DrcomNetService();
     _syncService = SyncService();
     _storeService = GeneralStoreService();
+
+    _bindService(_coursesService);
+    _bindService(_netService);
+    _bindService(_syncService);
   }
 
   BaseCoursesService get coursesService => _coursesService;
@@ -98,13 +104,10 @@ class ServiceProvider extends ChangeNotifier {
             : _syncService.baseUrl,
       );
       storeService.putPref("service_settings", settingsPreference);
-      notifyListeners();
     } catch (e) {
       if (kDebugMode) print('Failed to save service settings: $e');
     }
   }
-
-  void _disposeNetService() {}
 
   Future<void> _loadCurriculumData() async {
     try {
@@ -233,43 +236,6 @@ class ServiceProvider extends ChangeNotifier {
 
   //
 
-  Future<void> loginToCoursesService({String? cookie}) async {
-    if (cookie == null) {
-      throw Exception('Cookie is required for service login');
-    }
-    final service = coursesService as UstbByytService;
-    await service.loginWithCookie(cookie);
-    await service.login();
-    notifyListeners();
-  }
-
-  Future<void> logoutFromCoursesService() async {
-    await coursesService.logout();
-    notifyListeners();
-  }
-
-  //
-
-  Future<void> loginToNetService(
-    String username,
-    String password, {
-    String? randomCode,
-  }) async {
-    await netService.loginWithPassword(
-      username,
-      password,
-      randomCode: randomCode,
-    );
-    notifyListeners();
-  }
-
-  Future<void> logoutFromNetService() async {
-    await netService.logout();
-    notifyListeners();
-  }
-
-  //
-
   /// Try to restore login from cache on app startup
   Future<void> _tryAutoLogin() async {
     try {
@@ -285,7 +251,7 @@ class ServiceProvider extends ChangeNotifier {
 
       if (method == "cookie" || method == "sso") {
         if (data.cookie != null && data.user != null) {
-          await loginToCoursesService(cookie: data.cookie!);
+          await _coursesService.login(data.cookie!);
           // Get new user info and verify consistency
           final newUserInfo = await coursesService.getUserInfo();
           assert(
@@ -305,7 +271,17 @@ class ServiceProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    _disposeNetService();
+    for (final disposer in _serviceListenerDisposers) {
+      disposer();
+    }
     super.dispose();
+  }
+
+  void _bindService(Listenable service) {
+    void forward() => notifyListeners();
+    service.addListener(forward);
+    _serviceListenerDisposers.add(() {
+      service.removeListener(forward);
+    });
   }
 }

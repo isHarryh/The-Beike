@@ -169,7 +169,7 @@ class _AccountPageState extends State<AccountPage> {
         });
       }
 
-      await _serviceProvider.logoutFromCoursesService();
+      await _serviceProvider.coursesService.logout();
 
       // Clear user cache data but preserve lastSmsPhone
       final existingData = _serviceProvider.storeService

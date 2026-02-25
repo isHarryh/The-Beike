@@ -144,7 +144,7 @@ class _NetLoginDialogState extends State<NetLoginDialog> {
     });
 
     try {
-      await _serviceProvider.loginToNetService(
+      await _serviceProvider.netService.login(
         _usernameController.text.trim(),
         _passwordController.text,
         randomCode: _extraCodeController.text.trim().isEmpty

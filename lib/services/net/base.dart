@@ -6,7 +6,7 @@ import '/services/base.dart';
 import '/services/net/exceptions.dart';
 import '/types/net.dart';
 
-abstract class BaseNetService with BaseService {
+abstract class BaseNetService extends ChangeNotifier with BaseService {
   NetDashboardSessionState? _cachedSessionState;
 
   // Methods need to be implemented:
@@ -65,6 +65,7 @@ abstract class BaseNetService with BaseService {
   @protected
   void updateSessionState(NetDashboardSessionState newState) {
     _cachedSessionState = newState;
+    notifyListeners();
   }
 
   NetDashboardSessionState? get cachedSessionState => _cachedSessionState;
@@ -81,7 +82,7 @@ abstract class BaseNetService with BaseService {
     }
   }
 
-  Future<void> loginWithPassword(
+  Future<void> login(
     String username,
     String password, {
     String? randomCode,

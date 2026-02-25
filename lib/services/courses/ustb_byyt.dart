@@ -124,13 +124,8 @@ class UstbByytService extends BaseCoursesService {
   }
 
   @override
-  Future<void> doLogin() async {}
-
-  Future<void> loginWithCookie(String cookie) async {
+  Future<void> doLogin(String cookie) async {
     try {
-      setPending();
-
-      // Parse and save cookie to CookieJar
       final uri = Uri.parse(baseUrl);
       final cookies = cookie
           .split(';')
@@ -148,22 +143,13 @@ class UstbByytService extends BaseCoursesService {
 
       // Validate cookie by trying to get user info
       await getUserInfo();
-
-      await doLogin();
-
-      setOnline();
     } catch (e) {
       await _cookieJar.deleteAll();
-      if (e is CourseServiceNetworkError) {
-        setError('Failed to login with cookie (network error): $e');
-      } else if (e is CourseServiceException) {
-        setError('Failed to login with cookie: $e');
-      } else {
-        throw CourseServiceException(
-          'Failed to login with cookie (unexpected exception)',
-          e,
-        );
-      }
+      if (e is CourseServiceException) rethrow;
+      throw CourseServiceException(
+        'Failed to login with cookie (unexpected exception)',
+        e,
+      );
     }
   }
 
@@ -171,7 +157,6 @@ class UstbByytService extends BaseCoursesService {
   Future<void> doLogout() async {
     await _cookieJar.deleteAll();
     _selectionState = CourseSelectionState();
-    setOffline();
   }
 
   @override

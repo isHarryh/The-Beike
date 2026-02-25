@@ -70,7 +70,7 @@ class _SsoLoginDialogState extends State<_SsoLoginDialog> {
       }
 
       // Login with extracted cookie
-      await _serviceProvider.loginToCoursesService(cookie: cookie);
+      await _serviceProvider.coursesService.login(cookie);
 
       // Notify success with method and cookie
       widget.onLoginSuccess?.call("sso", cookie);

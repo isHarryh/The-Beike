@@ -68,7 +68,7 @@ class _CookieLoginDialogState extends State<_CookieLoginDialog> {
         _errorMessage = null;
       });
 
-      await _serviceProvider.loginToCoursesService(cookie: cookie);
+      await _serviceProvider.coursesService.login(cookie);
 
       // Notify success
       widget.onLoginSuccess?.call("cookie", cookie);

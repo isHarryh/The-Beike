@@ -94,7 +94,7 @@ class _NetChangePasswordDialogState extends State<NetChangePasswordDialog> {
       // Logout and update cached credentials
       if (mounted) {
         try {
-          await _serviceProvider.logoutFromNetService();
+          await _serviceProvider.netService.logout();
         } catch (e) {
           if (mounted) {}
         }

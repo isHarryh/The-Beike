@@ -4,20 +4,37 @@ import 'package:flutter/foundation.dart';
 import '/types/courses.dart';
 import '/services/base.dart';
 
-abstract class BaseCoursesService with BaseService {
+abstract class BaseCoursesService extends ChangeNotifier with BaseService {
   static const int heartbeatInterval = 300;
   Timer? _heartbeatTimer;
   DateTime? _lastHeartbeatTime;
 
   // Account Methods
 
-  Future<void> doLogin();
+  Future<void> doLogin(String cookie);
 
   Future<void> doLogout();
 
   Future<bool> doSendHeartbeat();
 
   Future<UserInfo> getUserInfo();
+
+  Future<void> login(String cookie) async {
+    await runLogin(() async {
+      await doLogin(cookie);
+      startHeartbeat();
+    });
+  }
+
+  Future<void> logout() async {
+    await runLogout(() async {
+      stopHeartbeat();
+      if (kDebugMode) {
+        print('Courses service logout called at base class');
+      }
+      await doLogout();
+    });
+  }
 
   // Data Methods
 
@@ -49,24 +66,6 @@ abstract class BaseCoursesService with BaseService {
   Future<bool> sendCourseSelection(TermInfo termInfo, CourseInfo courseInfo);
 
   Future<bool> sendCourseDeselection(TermInfo termInfo, CourseInfo courseInfo);
-
-  Future<void> login() async {
-    await doLogin();
-    if (isOnline) {
-      if (kDebugMode) {
-        print('Courses service login called at base class');
-      }
-      startHeartbeat();
-    }
-  }
-
-  Future<void> logout() async {
-    stopHeartbeat();
-    if (kDebugMode) {
-      print('Courses service logout called at base class');
-    }
-    await doLogout();
-  }
 
   void startHeartbeat() {
     stopHeartbeat();

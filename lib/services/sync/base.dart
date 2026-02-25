@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '/services/base.dart';
 import '/types/sync.dart';
 
@@ -14,13 +15,14 @@ class SyncStatus {
   bool get isSyncing => type == SyncStatusType.syncing;
 }
 
-abstract class BaseSyncService with BaseService {
+abstract class BaseSyncService extends ChangeNotifier with BaseService {
   SyncStatus? _lastSyncStatus;
 
   SyncStatus? get lastSyncStatus => _lastSyncStatus;
 
   void recordSyncStatus(SyncStatusType type) {
     _lastSyncStatus = SyncStatus(type: type, timestamp: DateTime.now());
+    notifyListeners();
   }
 
   /// Gets announcements from the server.
