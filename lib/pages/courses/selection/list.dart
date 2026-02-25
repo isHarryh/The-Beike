@@ -17,7 +17,8 @@ class CourseListPage extends StatefulWidget {
   State<CourseListPage> createState() => _CourseListPageState();
 }
 
-class _CourseListPageState extends State<CourseListPage> {
+class _CourseListPageState extends State<CourseListPage>
+    with SingleTickerProviderStateMixin {
   final ServiceProvider _serviceProvider = ServiceProvider.instance;
   final TextEditingController _searchController = TextEditingController();
 
@@ -34,6 +35,9 @@ class _CourseListPageState extends State<CourseListPage> {
   bool _isLoadingCourses = false;
   String? _errorMessage;
 
+  late final AnimationController _tabLoadBarController;
+  late final Animation<double> _tabLoadBarAnimation;
+
   String _currentSearchQuery = '';
   Filterers _filterers = Filterers();
   List<String> _availableCourseTypes = [];
@@ -46,11 +50,22 @@ class _CourseListPageState extends State<CourseListPage> {
   @override
   void initState() {
     super.initState();
+    _tabLoadBarController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+      reverseDuration: const Duration(milliseconds: 3000),
+    );
+    _tabLoadBarAnimation = CurvedAnimation(
+      parent: _tabLoadBarController,
+      curve: Curves.easeOut,
+      reverseCurve: Curves.easeIn,
+    );
     _loadCourseTabs();
   }
 
   @override
   void dispose() {
+    _tabLoadBarController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -97,6 +112,7 @@ class _CourseListPageState extends State<CourseListPage> {
       _errorMessage = null;
       _expandedCourseId = null;
     });
+    _startTabLoadBar();
 
     try {
       // Get all courses in the tab (both selectable and already selected)
@@ -190,6 +206,7 @@ class _CourseListPageState extends State<CourseListPage> {
           _filteredCourses = _searchCourses(_courses, _currentSearchQuery);
         }
       });
+      _finishTabLoadBar();
     } catch (e) {
       if (!mounted || _selectedTab?.tabId != currentTabId) return;
 
@@ -197,7 +214,23 @@ class _CourseListPageState extends State<CourseListPage> {
         _errorMessage = e.toString();
         _isLoadingCourses = false;
       });
+      _finishTabLoadBar();
     }
+  }
+
+  bool get _isTabSwitchDisabled {
+    return _isLoadingCourses || _tabLoadBarAnimation.value > 0;
+  }
+
+  void _startTabLoadBar() {
+    _tabLoadBarController.stop();
+    _tabLoadBarController.value = 0;
+    _tabLoadBarController.forward();
+  }
+
+  void _finishTabLoadBar() {
+    if (_tabLoadBarController.status == AnimationStatus.reverse) return;
+    _tabLoadBarController.reverse(from: _tabLoadBarController.value);
   }
 
   Future<void> _syncSelectedCoursesAfterSubmit() async {
@@ -517,7 +550,6 @@ class _CourseListPageState extends State<CourseListPage> {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             boxShadow: [
@@ -528,46 +560,7 @@ class _CourseListPageState extends State<CourseListPage> {
               ),
             ],
           ),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: _courseTabs.map((tab) {
-                final isSelected = _selectedTab?.tabId == tab.tabId;
-
-                return Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  child: FilterChip(
-                    selected: isSelected,
-                    label: Text(tab.tabName),
-                    onSelected: (selected) {
-                      if (selected &&
-                          mounted &&
-                          _selectedTab?.tabId != tab.tabId) {
-                        setState(() {
-                          _selectedTab = tab;
-                          _courses = [];
-                          _filteredCourses = [];
-                          _selectedCourseIds = [];
-                          _availableCourseTypes = [];
-                          _availableCourseCategories = [];
-                          _filterers.clear();
-                          _currentSearchQuery = '';
-                          _searchController.clear();
-                          _expandedCourseId = null;
-                          _errorMessage = null;
-                        });
-                        _loadCourses();
-                      }
-                    },
-                    selectedColor: Theme.of(
-                      context,
-                    ).primaryColor.withValues(alpha: 0.2),
-                    checkmarkColor: Theme.of(context).primaryColor,
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
+          child: _buildTabBar(),
         ),
 
         const Divider(height: 1),
@@ -630,6 +623,104 @@ class _CourseListPageState extends State<CourseListPage> {
               : const Center(child: Text('请选择标签页')),
         ),
       ],
+    );
+  }
+
+  Widget _buildTabBar() {
+    return AnimatedBuilder(
+      animation: _tabLoadBarController,
+      builder: (context, child) {
+        final isTabSwitchDisabled = _isTabSwitchDisabled;
+
+        return SizedBox(
+          width: double.infinity,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Positioned.fill(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: FractionallySizedBox(
+                    alignment: Alignment.centerLeft,
+                    widthFactor: _tabLoadBarAnimation.value,
+                    child: Container(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: _courseTabs.map((tab) {
+                      final isSelected = _selectedTab?.tabId == tab.tabId;
+
+                      return Container(
+                        margin: const EdgeInsets.only(right: 8),
+                        child: FilterChip(
+                          selected: isSelected,
+                          label: Text(
+                            tab.tabName,
+                            style: Theme.of(context).textTheme.labelLarge
+                                ?.copyWith(
+                                  color: isSelected
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Theme.of(context).colorScheme.onSurface,
+                                ),
+                          ),
+                          side: BorderSide(
+                            color: isSelected
+                                ? Theme.of(
+                                    context,
+                                  ).colorScheme.primary.withValues(alpha: 0.4)
+                                : Theme.of(
+                                    context,
+                                  ).colorScheme.outline.withValues(alpha: 0.4),
+                            width: 1,
+                          ),
+                          onSelected: isTabSwitchDisabled
+                              ? null
+                              : (selected) {
+                                  if (selected &&
+                                      mounted &&
+                                      _selectedTab?.tabId != tab.tabId) {
+                                    setState(() {
+                                      _selectedTab = tab;
+                                      _courses = [];
+                                      _filteredCourses = [];
+                                      _selectedCourseIds = [];
+                                      _availableCourseTypes = [];
+                                      _availableCourseCategories = [];
+                                      _filterers.clear();
+                                      _currentSearchQuery = '';
+                                      _searchController.clear();
+                                      _expandedCourseId = null;
+                                      _errorMessage = null;
+                                    });
+                                    _loadCourses();
+                                  }
+                                },
+                          selectedColor: Theme.of(
+                            context,
+                          ).colorScheme.primaryContainer.withValues(alpha: 0.3),
+                          checkmarkColor: Theme.of(context).colorScheme.primary,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
