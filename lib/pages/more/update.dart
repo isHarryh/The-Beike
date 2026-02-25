@@ -90,228 +90,156 @@ class _UpdatePageState extends State<UpdatePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PageAppBar(
-        title: '更新',
-        actions: [
-          IconButton(
-            icon: _isLoading
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.refresh),
-            tooltip: '刷新',
-            onPressed: _isLoading ? null : _checkUpdate,
-          ),
-        ],
-      ),
+      appBar: PageAppBar(title: '版本更新', actions: const []),
       body: RefreshIndicator(
         onRefresh: _checkUpdate,
-        child: ListView(
-          padding: const EdgeInsets.all(16.0),
-          children: [
-            _buildVersionInfo(),
-            const SizedBox(height: 24),
-            if (_hasUpdate) _buildDownloadLinks(),
-            if (!_hasUpdate && _releaseInfo != null)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16.0),
-                child: Center(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.check_circle, color: Colors.green),
-                      SizedBox(width: 8),
-                      Text('当前已是最新版本'),
-                    ],
-                  ),
-                ),
-              ),
-          ],
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildVersionCards(context),
+              const SizedBox(height: 36),
+              if (_releaseInfo != null) _buildDownloadLinks(context),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildVersionInfo() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildVersionCards(BuildContext context) {
+    final theme = Theme.of(context);
+    final latestText = _releaseInfo != null
+        ? _formatVersion(_releaseInfo!.stableVersion)
+        : (_isLoading ? '请稍后' : 'N/A');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                const Icon(Icons.info_outline, size: 20),
-                const SizedBox(width: 8),
-                const Text(
-                  '版本信息',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.devices, size: 18),
-                    const SizedBox(width: 8),
-                    const Text('当前版本：'),
-                  ],
-                ),
-                Text(
-                  _formatVersion(MetaInfo.instance.appVersion),
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (_error != null)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.cloud_off_outlined, size: 18),
-                      const SizedBox(width: 8),
-                      const Text('最新版本：'),
-                    ],
-                  ),
-                  Text(
-                    '获取更新失败',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                ],
-              )
-            else if (_releaseInfo != null)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.cloud_done_outlined, size: 18),
-                      const SizedBox(width: 8),
-                      const Text('最新版本：'),
-                    ],
-                  ),
-                  Text(
-                    _formatVersion(_releaseInfo!.stableVersion),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ],
-              )
-            else if (_isLoading)
-              const Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.cloud_queue_outlined, size: 18),
-                      SizedBox(width: 8),
-                      Text('最新版本：'),
-                    ],
-                  ),
-                  Text('正在检查更新...'),
-                ],
+            Icon(Icons.commit, color: theme.colorScheme.primary),
+            const SizedBox(width: 8),
+            Text(
+              '版本信息',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
               ),
+            ),
+            const Spacer(),
+            IconButton(
+              icon: const Icon(Icons.refresh, size: 20),
+              onPressed: _isLoading ? null : _checkUpdate,
+            ),
+            const SizedBox(width: 2),
+            _buildStatusChip(theme),
+            const SizedBox(width: 2),
           ],
         ),
-      ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            _VersionPill(
+              title: '当前',
+              value: _formatVersion(MetaInfo.instance.appVersion),
+              color: !_hasUpdate
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.primaryContainer,
+              textColor: !_hasUpdate
+                  ? theme.colorScheme.onPrimary
+                  : theme.colorScheme.onPrimaryContainer,
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4),
+              child: Icon(Icons.arrow_forward_ios, size: 16),
+            ),
+            _VersionPill(
+              title: '最新',
+              value: latestText,
+              color: _hasUpdate
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.primaryContainer,
+              textColor: _hasUpdate
+                  ? theme.colorScheme.onPrimary
+                  : theme.colorScheme.onPrimaryContainer,
+            ),
+          ],
+        ),
+      ],
     );
   }
 
-  Widget _buildDownloadLinks() {
+  Widget _buildDownloadLinks(BuildContext context) {
     if (_releaseInfo == null || _releaseInfo!.stableDownloads.isEmpty) {
       return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 16.0),
-        child: Center(child: Text('暂无可用下载源')),
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: Center(child: Text('暂无可用下载链接')),
       );
     }
 
     final currentPlatform = MetaInfo.instance.platformName.toLowerCase();
     final downloads = _releaseInfo!.stableDownloads;
-
-    // Separate current platform from others
-    final currentPlatformEntries = downloads.entries.where(
-      (entry) => entry.key.toLowerCase() == currentPlatform,
+    final currentEntry = downloads.entries.firstWhere(
+      (e) => e.key.toLowerCase() == currentPlatform,
+      orElse: () => downloads.entries.first,
     );
-    final currentPlatformEntry = currentPlatformEntries.isNotEmpty
-        ? currentPlatformEntries.first
-        : null;
     final otherPlatforms = downloads.entries
-        .where((entry) => entry.key.toLowerCase() != currentPlatform)
+        .where((e) => e.key.toLowerCase() != currentPlatform)
         .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.download_for_offline,
-              size: 24,
-              color: Theme.of(context).colorScheme.primary,
-            ),
+            Icon(Icons.download_done, color: Theme.of(context).primaryColor),
             const SizedBox(width: 8),
-            const Text(
-              '可下载软件更新！',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            Text(
+              '安装包下载',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        // Current platform (if available)
-        if (currentPlatformEntry != null)
-          ..._buildPlatformSection(
-            currentPlatformEntry.key,
-            currentPlatformEntry.value,
-          ),
-        // Other platforms in expandable section
+        const SizedBox(height: 12),
+        _PlatformDownloadsCard(
+          title: _releaseInfo!.getDisplayPlatformName(currentEntry.key),
+          sources: currentEntry.value,
+          releaseInfo: _releaseInfo!,
+        ),
         if (otherPlatforms.isNotEmpty)
           Card(
-            margin: const EdgeInsets.only(top: 12.0),
+            margin: const EdgeInsets.only(top: 12),
             child: ExpansionTile(
-              title: const Text('其他操作系统'),
+              title: const Text('其他平台'),
               initiallyExpanded: _expandOtherPlatforms,
-              onExpansionChanged: (expanded) {
-                setState(() => _expandOtherPlatforms = expanded);
-              },
+              onExpansionChanged: (v) => setState(() {
+                _expandOtherPlatforms = v;
+              }),
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(12.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ...otherPlatforms.expand<Widget>((platformEntry) {
-                        final platform = platformEntry.key;
-                        final sources = platformEntry.value;
-                        final displayPlatformName = _releaseInfo!
-                            .getDisplayPlatformName(platform);
-
-                        return [
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              top: 12.0,
-                              bottom: 8.0,
-                            ),
-                            child: Text(
-                              displayPlatformName,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
+                    children: otherPlatforms
+                        .map(
+                          (entry) => Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _PlatformDownloadsCard(
+                              title: _releaseInfo!.getDisplayPlatformName(
+                                entry.key,
                               ),
+                              sources: entry.value,
+                              releaseInfo: _releaseInfo!,
                             ),
                           ),
-                          ..._buildSourceCards(sources),
-                        ];
-                      }),
-                    ],
+                        )
+                        .toList(),
                   ),
                 ),
               ],
@@ -321,145 +249,234 @@ class _UpdatePageState extends State<UpdatePage> {
     );
   }
 
-  List<Widget> _buildPlatformSection(
-    String platform,
-    Map<String, String> sources,
-  ) {
-    final displayPlatformName = _releaseInfo!.getDisplayPlatformName(platform);
+  Widget _buildStatusChip(ThemeData theme) {
+    if (_isLoading) {
+      return Chip(
+        avatar: const SizedBox(
+          width: 16,
+          height: 16,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+        label: const Text('正在检查'),
+      );
+    }
+    if (_error != null) {
+      return Chip(
+        avatar: const Icon(Icons.error_outline, color: Colors.red),
+        label: const Text('检查失败'),
+        backgroundColor: theme.colorScheme.errorContainer,
+        labelStyle: TextStyle(
+          color: theme.colorScheme.onErrorContainer,
+          fontSize: 12,
+        ),
+      );
+    }
+    return Chip(
+      avatar: Icon(
+        _hasUpdate ? Icons.upgrade : Icons.verified,
+        color: _hasUpdate ? theme.colorScheme.primary : Colors.green,
+      ),
+      label: Text(_hasUpdate ? '发现新版本' : '已是最新版'),
+    );
+  }
+}
 
-    return [
-      Padding(
-        padding: const EdgeInsets.only(bottom: 8.0),
-        child: Text(
-          displayPlatformName,
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+class _PlatformDownloadsCard extends StatelessWidget {
+  final String title;
+  final Map<String, String> sources;
+  final ReleaseInfo releaseInfo;
+
+  const _PlatformDownloadsCard({
+    required this.title,
+    required this.sources,
+    required this.releaseInfo,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...sources.entries.map(
+              (entry) => _DownloadSourceTile(
+                name: releaseInfo.getDisplayDownloadChannelName(entry.key),
+                tip: releaseInfo.getDisplayDownloadChannelTip(entry.key),
+                url: entry.value,
+                isRecommended: releaseInfo.getIsRecommendedChannel(entry.key),
+              ),
+            ),
+          ],
         ),
       ),
-      ..._buildSourceCards(sources),
-    ];
+    );
   }
+}
 
-  List<Widget> _buildSourceCards(Map<String, String> sources) {
-    return sources.entries.map((sourceEntry) {
-      final sourceName = sourceEntry.key;
-      final downloadUrl = sourceEntry.value;
-      final displayChannelName = _releaseInfo!.getDisplayDownloadChannelName(
-        sourceName,
-      );
-      final displayChannelTip = _releaseInfo!.getDisplayDownloadChannelTip(
-        sourceName,
-      );
+class _DownloadSourceTile extends StatelessWidget {
+  final String name;
+  final String tip;
+  final String url;
+  final bool isRecommended;
 
-      return Card(
-        margin: const EdgeInsets.only(bottom: 8.0),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [Icon(Icons.cloud_download_outlined, size: 28)],
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              displayChannelName,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            if (_releaseInfo!.getIsRecommendedChannel(
-                              sourceName,
-                            )) ...[
-                              const SizedBox(width: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: const Text(
-                                  '推荐',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                        if (displayChannelTip.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            displayChannelTip,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.copy, size: 16),
-                        tooltip: '复制链接',
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: downloadUrl));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('下载链接已复制')),
-                          );
-                        },
+  const _DownloadSourceTile({
+    required this.name,
+    required this.tip,
+    required this.url,
+    required this.isRecommended,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: theme.dividerColor.withValues(alpha: 0.2)),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.cloud_download_outlined, color: theme.colorScheme.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      name,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.download, size: 20),
-                        tooltip: '前往下载',
-                        color: Theme.of(context).colorScheme.primary,
-                        onPressed: () async {
-                          final uri = Uri.parse(downloadUrl);
-                          if (await canLaunchUrl(uri)) {
-                            await launchUrl(
-                              uri,
-                              mode: LaunchMode.externalApplication,
-                            );
-                          } else {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('无法打开下载链接')),
-                              );
-                            }
-                          }
-                        },
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (isRecommended) ...[
+                      const SizedBox(width: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          '推荐',
+                          style: TextStyle(color: Colors.white, fontSize: 10),
+                        ),
                       ),
                     ],
+                  ],
+                ),
+                if (tip.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      tip,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.copy, size: 18),
+            tooltip: '复制链接',
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: url));
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('下载链接已复制')));
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.open_in_new, size: 20),
+            color: theme.colorScheme.primary,
+            tooltip: '打开链接',
+            onPressed: () async {
+              final uri = Uri.parse(url);
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              } else {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('无法打开下载链接')));
+                }
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VersionPill extends StatelessWidget {
+  final String title;
+  final String value;
+  final Color color;
+  final Color textColor;
+
+  const _VersionPill({
+    required this.title,
+    required this.value,
+    required this.color,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(12),
         ),
-      );
-    }).toList();
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: Theme.of(
+                context,
+              ).textTheme.labelLarge?.copyWith(color: textColor),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: textColor,
+                fontWeight: FontWeight.w800,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
