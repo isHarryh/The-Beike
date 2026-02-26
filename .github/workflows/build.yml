@@ -211,27 +211,17 @@ jobs:
     if: ${{ needs.meta.outputs.is_release == 'true' }}
 
     steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v6
-        with:
-          name: ${{ needs.meta.outputs.dist_apk_name }}
-          path: dist
+      - name: Prepare directory
+        run: rm -rf dist && mkdir dist
 
-      - name: Download artifact
+      - name: Download artifacts
         uses: actions/download-artifact@v6
         with:
-          name: ${{ needs.meta.outputs.dist_exe_name }}
-          path: dist
-
-      - name: Download artifact
-        uses: actions/download-artifact@v6
-        with:
-          name: ${{ needs.meta.outputs.dist_tar_name }}
           path: dist
 
       - uses: softprops/action-gh-release@v2
         with:
-          files: dist/*
+          files: dist/**/*
           tag_name: ${{ needs.meta.outputs.tag_name }}
           draft: false
           prerelease: ${{ needs.meta.outputs.is_prerelease == 'true' }}
