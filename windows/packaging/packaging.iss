@@ -26,7 +26,7 @@ Compression         =lzma2/max
 DefaultDirName      ="{userpf}\{#MyAppName}"
 DefaultGroupName    ={#MyAppName}
 PrivilegesRequired  =lowest
-OutputBaseFilename  ={#MyAppName}-v{#MyAppVersion}-Setup
+OutputBaseFilename  ={#MyAppName}-v{#MyAppVersion}-Windows
 OutputDir           =..\..\dist\windows
 SetupIconFile       =..\runner\resources\app_icon.ico
 SolidCompression    =yes
@@ -55,3 +55,6 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppFileName}.exe"; Task
 
 [Run]
 Filename: "{app}\{#MyAppFileName}.exe"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall
+
+[InstallDelete]
+Type: filesandordirs; Name: "{app}\data"
