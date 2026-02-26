@@ -3,7 +3,7 @@
 ; Documentation: https://jrsoftware.org/ishelp.php
 ; Download Inno Setup: https://jrsoftware.org/isdl.php
 
-#define MyAppName "The Beike"
+#define MyAppName "TheBeike"
 #define MyAppFileName "the_beike"
 #define MyAppVersion "1.0.0"
 #define MyAppPublisher "Harry Huang"

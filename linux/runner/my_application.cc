@@ -23,7 +23,7 @@ static const char* get_localized_app_title() {
     }
   }
 
-  return "The Beike";
+  return "TheBeike";
 }
 
 struct _MyApplication {
