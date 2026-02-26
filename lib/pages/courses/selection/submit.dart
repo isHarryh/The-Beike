@@ -172,6 +172,7 @@ class _CourseSubmitPageState extends State<CourseSubmitPage>
   int _concurrencyCount = 1; // Configurable
 
   bool _isSubmitting = false;
+  bool _stopRequested = false;
 
   // courseKey -> success?
   Map<String, bool> _courseSuccessMap = {};
@@ -199,6 +200,7 @@ class _CourseSubmitPageState extends State<CourseSubmitPage>
 
   @override
   void dispose() {
+    _requestStopSubmission();
     _isSubmitting = false;
     _blinkController.dispose();
     super.dispose();
@@ -208,6 +210,20 @@ class _CourseSubmitPageState extends State<CourseSubmitPage>
     if (mounted) {
       setState(fn);
     }
+  }
+
+  void _requestStopSubmission() {
+    if (!_isSubmitting || _stopRequested) return;
+    _safeSetState(() {
+      _stopRequested = true;
+      for (final task in _tasks) {
+        if (task.status == CourseSelectionStatus.idle) {
+          task.status = CourseSelectionStatus.cancelled;
+          task.endTime = DateTime.now();
+          task.errorMessage = '已停止';
+        }
+      }
+    });
   }
 
   void _initializeTasks() {
@@ -228,17 +244,27 @@ class _CourseSubmitPageState extends State<CourseSubmitPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: PageAppBar(
-        title: '提交选课',
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          _requestStopSubmission();
+        }
+      },
+      child: Scaffold(
+        appBar: PageAppBar(
+          title: '提交选课',
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
 
-        actions: [buildTermInfoDisplay(context, widget.termInfo)],
+          actions: [buildTermInfoDisplay(context, widget.termInfo)],
+        ),
+        body: _buildContent(),
       ),
-      body: _buildContent(),
     );
   }
 
@@ -530,27 +556,25 @@ class _CourseSubmitPageState extends State<CourseSubmitPage>
 
           const SizedBox(width: 12),
 
-          Expanded(
-            child: Row(
-              children: [
-                Text(
-                  '协程$coroutineIndex: ',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14,
-                    color: Colors.grey.shade700,
-                  ),
+          Row(
+            children: [
+              Text(
+                '协程$coroutineIndex: ',
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                  color: Colors.grey.shade700,
                 ),
-                Text(
-                  statusInfo.text,
-                  style: TextStyle(
-                    color: statusInfo.color,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14,
-                  ),
+              ),
+              Text(
+                statusInfo.text,
+                style: TextStyle(
+                  color: statusInfo.color,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
 
           Flexible(
@@ -563,17 +587,14 @@ class _CourseSubmitPageState extends State<CourseSubmitPage>
                 runSpacing: 2,
                 children: [
                   if (task.errorMessage != null)
-                    Container(
-                      constraints: const BoxConstraints(maxWidth: 200),
-                      child: Text(
-                        task.errorMessage!,
-                        style: TextStyle(
-                          color: Colors.red.shade600,
-                          fontSize: 11,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.end,
+                    Text(
+                      task.errorMessage!,
+                      style: TextStyle(
+                        color: Colors.red.shade600,
+                        fontSize: 11,
                       ),
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.end,
                     ),
                   if (task.retryCount > 0)
                     Text(
@@ -617,6 +638,10 @@ class _CourseSubmitPageState extends State<CourseSubmitPage>
   }
 
   Widget _buildSubmitButton() {
+    final canStop = _isSubmitting && !_stopRequested;
+    final canSubmit = _tasks.isNotEmpty && !_isSubmitting;
+    final isDisabled = _tasks.isEmpty && !_isSubmitting;
+
     return Container(
       height: 56,
       decoration: BoxDecoration(
@@ -630,26 +655,29 @@ class _CourseSubmitPageState extends State<CourseSubmitPage>
         ],
       ),
       child: Material(
-        color: _tasks.isEmpty || _isSubmitting
+        color: isDisabled
             ? Colors.grey.shade400
+            : _isSubmitting
+            ? Theme.of(context).colorScheme.error
             : Theme.of(context).colorScheme.primary,
         borderRadius: BorderRadius.circular(28),
         child: InkWell(
           borderRadius: BorderRadius.circular(28),
-          onTap: _tasks.isEmpty || _isSubmitting ? null : _handleSubmit,
+          onTap: canStop
+              ? _requestStopSubmission
+              : canSubmit
+              ? _handleSubmit
+              : null,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (_isSubmitting)
-                  const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
+                  Icon(
+                    _stopRequested ? Icons.hourglass_empty : Icons.stop_circle,
+                    color: Colors.white,
+                    size: 20,
                   )
                 else
                   Icon(
@@ -660,7 +688,9 @@ class _CourseSubmitPageState extends State<CourseSubmitPage>
                 const SizedBox(width: 12),
                 Text(
                   _isSubmitting
-                      ? '提交中...'
+                      ? _stopRequested
+                          ? '停止中...'
+                          : '停止提交'
                       : _tasks.isEmpty
                       ? '请先选择课程'
                       : '提交选课申请',
@@ -681,6 +711,7 @@ class _CourseSubmitPageState extends State<CourseSubmitPage>
   void _handleSubmit() {
     // Reset
     _initializeTasks();
+    _stopRequested = false;
 
     final Set<String> uniqueCourses = {};
     for (final task in _tasks) {
@@ -713,6 +744,7 @@ class _CourseSubmitPageState extends State<CourseSubmitPage>
   Future<void> _startSubmission() async {
     _safeSetState(() {
       _isSubmitting = true;
+      _stopRequested = false;
     });
 
     try {
@@ -729,7 +761,11 @@ class _CourseSubmitPageState extends State<CourseSubmitPage>
       await Future.wait(futures);
 
       if (mounted) {
-        _showSubmitResult();
+        if (_stopRequested) {
+          _showStopResult();
+        } else {
+          _showSubmitResult();
+        }
       }
     } catch (e) {
       // ignored
@@ -744,6 +780,15 @@ class _CourseSubmitPageState extends State<CourseSubmitPage>
     int maxRetries = _autoRetry ? 33550336 : 1;
 
     for (int retry = 0; retry < maxRetries; retry++) {
+      if (_stopRequested) {
+        _safeSetState(() {
+          task.endTime = DateTime.now();
+          task.status = CourseSelectionStatus.cancelled;
+          task.errorMessage = '已停止';
+        });
+        return;
+      }
+
       final courseKey = task.course.uniqueKey;
       if (_courseSuccessMap[courseKey] == true) {
         _safeSetState(() {
@@ -809,6 +854,15 @@ class _CourseSubmitPageState extends State<CourseSubmitPage>
         });
       }
 
+      if (_stopRequested) {
+        _safeSetState(() {
+          task.endTime = DateTime.now();
+          task.status = CourseSelectionStatus.cancelled;
+          task.errorMessage = '已停止';
+        });
+        return;
+      }
+
       if (retry < maxRetries - 1) {
         await Future.delayed(Duration(milliseconds: 200));
       }
@@ -849,6 +903,52 @@ class _CourseSubmitPageState extends State<CourseSubmitPage>
                 style: TextStyle(color: Colors.orange),
               ),
             ],
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showStopResult() {
+    final Map<String, bool> courseResults = {};
+
+    for (final task in _tasks) {
+      final courseKey = task.course.uniqueKey;
+      if (task.status == CourseSelectionStatus.success) {
+        courseResults[courseKey] = true;
+      } else if (!courseResults.containsKey(courseKey)) {
+        courseResults[courseKey] = false;
+      }
+    }
+
+    int successCourseCount = courseResults.values
+        .where((success) => success)
+        .length;
+    int totalCourseCount = courseResults.length;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('提交已停止'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('成功：$successCourseCount / $totalCourseCount 门课程'),
+            const SizedBox(height: 8),
+            const Text(
+              '已停止后续提交。',
+              style: TextStyle(color: Colors.orange),
+            ),
           ],
         ),
         actions: [
