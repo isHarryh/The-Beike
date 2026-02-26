@@ -1,0 +1,229 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - "main"
+    tags:
+      - "v*.*.*"
+
+  pull_request:
+    branches:
+      - "main"
+
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  APP_NAME: "TheBeike"
+  FLUTTER_VERSION: "3.38.10"
+
+jobs:
+  meta:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Get info
+        id: get_info
+        run: |
+          tag_name=$(git describe --tags --match "v*" ${{ github.ref }} || true)
+
+          if [[ ${{ startsWith(github.ref, 'refs/tags/v') }} == "true" && $tag_name == v* ]]; then
+            is_release=true
+            [[ $tag_name =~ alpha|beta ]] && is_prerelease=true || is_prerelease=false
+            tag_name=${tag_name%-*-*}
+          else
+            is_release=false
+            is_prerelease=false
+            tag_name=$(git rev-parse --short HEAD)
+          fi
+
+          echo "Tag name: $tag_name"
+          echo "Is release: $is_release"
+          echo "Is prerelease: $is_prerelease"
+
+          echo tag_name=$tag_name | tee -a $GITHUB_OUTPUT
+          echo is_release=$is_release | tee -a $GITHUB_OUTPUT
+          echo is_prerelease=$is_prerelease | tee -a $GITHUB_OUTPUT
+
+          echo dist_apk_name=${{ env.APP_NAME }}-${tag_name}-Android.apk | tee -a $GITHUB_OUTPUT
+          echo dist_exe_name=${{ env.APP_NAME }}-${tag_name}-Windows.exe | tee -a $GITHUB_OUTPUT
+          echo dist_tar_name=${{ env.APP_NAME }}-${tag_name}-Linux.tar.gz | tee -a $GITHUB_OUTPUT
+
+    outputs:
+      tag_name: ${{ steps.get_info.outputs.tag_name }}
+      is_release: ${{ steps.get_info.outputs.is_release }}
+      is_prerelease: ${{ steps.get_info.outputs.is_prerelease }}
+      dist_apk_name: ${{ steps.get_info.outputs.dist_apk_name }}
+      dist_exe_name: ${{ steps.get_info.outputs.dist_exe_name }}
+      dist_tar_name: ${{ steps.get_info.outputs.dist_tar_name }}
+
+  build_android:
+    needs: meta
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Cache pub deps
+        uses: actions/cache@v5
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.yaml') }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - name: Get pub deps
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release --obfuscate --split-debug-info=build/symbols
+
+      - name: Prepare artifact
+        run: |
+          rm -rf dist && mkdir dist
+          cp build/app/outputs/flutter-apk/*.apk dist/${{ needs.meta.outputs.dist_apk_name }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ needs.meta.outputs.dist_apk_name }}
+          path: dist/${{ needs.meta.outputs.dist_apk_name }}
+
+  build_windows:
+    needs: meta
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Cache pub deps
+        uses: actions/cache@v5
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.yaml') }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - name: Setup Inno Setup
+        run: choco install innosetup --no-progress --version=6.7.1
+
+      - name: Get pub deps
+        run: flutter pub get
+
+      - name: Build EXE
+        run: flutter build windows --release --obfuscate --split-debug-info=build/symbols
+
+      - name: Package installer
+        run: |
+          rm -rf dist && mkdir dist
+          iscc windows/packaging/packaging.iss
+
+      - name: Prepare artifact
+        run: mv dist/*.exe dist/${{ needs.meta.outputs.dist_exe_name }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ needs.meta.outputs.dist_exe_name }}
+          path: dist/${{ needs.meta.outputs.dist_exe_name }}
+
+  build_linux:
+    needs: meta
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Cache pub deps
+        uses: actions/cache@v5
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.yaml') }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-0 libblkid1 liblzma5
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - name: Get pub deps
+        run: flutter pub get
+
+      - name: Build Linux
+        run: flutter build linux --release --obfuscate --split-debug-info=build/symbols
+
+      - name: Prepare artifact
+        run: |
+          mkdir -p dist
+          tar -czf dist/${{ needs.meta.outputs.dist_tar_name }} -C build/linux/x64/release/bundle .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ needs.meta.outputs.dist_tar_name }}
+          path: dist/${{ needs.meta.outputs.dist_tar_name }}
+
+  release:
+    needs: [meta, build_android, build_windows, build_linux]
+    runs-on: ubuntu-latest
+    if: ${{ needs.meta.outputs.is_release == 'true' }}
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v6
+        with:
+          name: ${{ needs.meta.outputs.dist_apk_name }}
+          path: dist
+
+      - name: Download artifact
+        uses: actions/download-artifact@v6
+        with:
+          name: ${{ needs.meta.outputs.dist_exe_name }}
+          path: dist
+
+      - name: Download artifact
+        uses: actions/download-artifact@v6
+        with:
+          name: ${{ needs.meta.outputs.dist_tar_name }}
+          path: dist
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          tag_name: ${{ needs.meta.outputs.tag_name }}
+          draft: false
+          prerelease: ${{ needs.meta.outputs.is_prerelease == 'true' }}
