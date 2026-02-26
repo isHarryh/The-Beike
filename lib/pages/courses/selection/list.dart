@@ -35,8 +35,7 @@ class _CourseListPageState extends State<CourseListPage>
   bool _isLoadingCourses = false;
   String? _errorMessage;
 
-  late final AnimationController _tabLoadBarController;
-  late final Animation<double> _tabLoadBarAnimation;
+  late final CooldownHandler _cooldownHandler;
 
   String _currentSearchQuery = '';
   Filterers _filterers = Filterers();
@@ -50,22 +49,15 @@ class _CourseListPageState extends State<CourseListPage>
   @override
   void initState() {
     super.initState();
-    _tabLoadBarController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-      reverseDuration: const Duration(milliseconds: 3000),
-    );
-    _tabLoadBarAnimation = CurvedAnimation(
-      parent: _tabLoadBarController,
-      curve: Curves.easeOut,
-      reverseCurve: Curves.easeIn,
-    );
+    _cooldownHandler = CooldownHandler(vsync: this);
+    _cooldownHandler.controller.addListener(_handleCooldownTick);
     _loadCourseTabs();
   }
 
   @override
   void dispose() {
-    _tabLoadBarController.dispose();
+    _cooldownHandler.controller.removeListener(_handleCooldownTick);
+    _cooldownHandler.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -219,18 +211,20 @@ class _CourseListPageState extends State<CourseListPage>
   }
 
   bool get _isTabSwitchDisabled {
-    return _isLoadingCourses || _tabLoadBarAnimation.value > 0;
+    return _isLoadingCourses || _cooldownHandler.isCoolingDown;
   }
 
   void _startTabLoadBar() {
-    _tabLoadBarController.stop();
-    _tabLoadBarController.value = 0;
-    _tabLoadBarController.forward();
+    _cooldownHandler.start(isMounted: () => mounted);
   }
 
   void _finishTabLoadBar() {
-    if (_tabLoadBarController.status == AnimationStatus.reverse) return;
-    _tabLoadBarController.reverse(from: _tabLoadBarController.value);
+    _cooldownHandler.finish(isMounted: () => mounted);
+  }
+
+  void _handleCooldownTick() {
+    if (!mounted) return;
+    setState(() {});
   }
 
   Future<void> _syncSelectedCoursesAfterSubmit() async {
@@ -240,6 +234,7 @@ class _CourseListPageState extends State<CourseListPage>
       _isLoading = true;
       _errorMessage = null;
     });
+    _startTabLoadBar();
 
     try {
       final allSelectedCourses = await _serviceProvider.coursesService
@@ -275,6 +270,10 @@ class _CourseListPageState extends State<CourseListPage>
           _errorMessage = e.toString();
           _isLoading = false;
         });
+      }
+    } finally {
+      if (mounted) {
+        _finishTabLoadBar();
       }
     }
   }
@@ -628,7 +627,7 @@ class _CourseListPageState extends State<CourseListPage>
 
   Widget _buildTabBar() {
     return AnimatedBuilder(
-      animation: _tabLoadBarController,
+      animation: _cooldownHandler.controller,
       builder: (context, child) {
         final isTabSwitchDisabled = _isTabSwitchDisabled;
 
@@ -640,12 +639,12 @@ class _CourseListPageState extends State<CourseListPage>
               Positioned.fill(
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: FractionallySizedBox(
-                    alignment: Alignment.centerLeft,
-                    widthFactor: _tabLoadBarAnimation.value,
-                    child: Container(
-                      color: Theme.of(
-                        context,
+                    child: FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: _cooldownHandler.animation.value,
+                      child: Container(
+                        color: Theme.of(
+                          context,
                       ).colorScheme.surfaceContainerHighest,
                     ),
                   ),
@@ -846,6 +845,7 @@ class _CourseListPageState extends State<CourseListPage>
                         termInfo: widget.termInfo,
                         isExpanded: isExpanded,
                         columnWidths: columnWidths,
+                        isInteractionDisabled: _isTabSwitchDisabled,
                         onToggle: () {
                           setState(() {
                             _expandedCourseId = isExpanded
@@ -858,6 +858,7 @@ class _CourseListPageState extends State<CourseListPage>
                           setState(() {});
                         },
                         onRefreshRequired: _loadCourses,
+                        cooldownHandler: _cooldownHandler,
                         selectedCourseIds: _selectedCourseIds,
                       );
                     },
@@ -1047,9 +1048,11 @@ class _CourseTableRow extends StatefulWidget {
   final TermInfo termInfo;
   final bool isExpanded;
   final List<double> columnWidths;
+  final bool isInteractionDisabled;
   final VoidCallback onToggle;
   final VoidCallback onSelectionChanged;
   final VoidCallback onRefreshRequired;
+  final CooldownHandler cooldownHandler;
   final List<String> selectedCourseIds;
 
   const _CourseTableRow({
@@ -1057,9 +1060,11 @@ class _CourseTableRow extends StatefulWidget {
     required this.termInfo,
     required this.isExpanded,
     required this.columnWidths,
+    required this.isInteractionDisabled,
     required this.onToggle,
     required this.onSelectionChanged,
     required this.onRefreshRequired,
+    required this.cooldownHandler,
     required this.selectedCourseIds,
   });
 
@@ -1165,7 +1170,7 @@ class _CourseTableRowState extends State<_CourseTableRow>
     return Column(
       children: [
         InkWell(
-          onTap: widget.onToggle,
+          onTap: widget.isInteractionDisabled ? null : widget.onToggle,
           splashColor: Theme.of(
             context,
           ).colorScheme.primary.withValues(alpha: 0.1),
@@ -1289,6 +1294,7 @@ class _CourseTableRowState extends State<_CourseTableRow>
           onToggle: widget.onToggle,
           onSelectionChanged: widget.onSelectionChanged,
           onRefreshRequired: widget.onRefreshRequired,
+          cooldownHandler: widget.cooldownHandler,
           selectedCourseIds: widget.selectedCourseIds,
         ),
       ],

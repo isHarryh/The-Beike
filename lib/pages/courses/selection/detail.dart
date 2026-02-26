@@ -10,6 +10,7 @@ class CourseDetailCard extends StatefulWidget {
   final VoidCallback onToggle;
   final VoidCallback onSelectionChanged;
   final VoidCallback onRefreshRequired;
+  final CooldownHandler cooldownHandler;
   final List<String> selectedCourseIds;
 
   const CourseDetailCard({
@@ -20,6 +21,7 @@ class CourseDetailCard extends StatefulWidget {
     required this.onToggle,
     required this.onSelectionChanged,
     required this.onRefreshRequired,
+    required this.cooldownHandler,
     required this.selectedCourseIds,
   });
 
@@ -173,6 +175,9 @@ class _CourseDetailCardState extends State<CourseDetailCard>
   }
 
   Future<void> _loadCourseDetails() async {
+    if (!mounted) return;
+    widget.cooldownHandler.start(isMounted: () => mounted);
+
     setState(() {
       _isLoadingDetails = true;
       _detailsErrorMessage = null;
@@ -196,6 +201,10 @@ class _CourseDetailCardState extends State<CourseDetailCard>
         _detailsErrorMessage = e.toString();
         _isLoadingDetails = false;
       });
+    } finally {
+      if (mounted) {
+        widget.cooldownHandler.finish(isMounted: () => mounted);
+      }
     }
   }
 

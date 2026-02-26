@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import '/services/provider.dart';
 import '/types/courses.dart';
+
+// Alerts and dialogs
 
 Future<bool?> alertWarning(BuildContext context, String content, String tip) {
   return showDialog<bool>(
@@ -77,7 +80,6 @@ Future<bool?> alertDeselectCourseWarning(
   );
 }
 
-/// A dialog that handles course deselection with loading and result states.
 class CourseDeselectionDialog extends StatefulWidget {
   final TermInfo termInfo;
   final CourseInfo course;
@@ -247,6 +249,8 @@ class _CourseDeselectionDialogState extends State<CourseDeselectionDialog> {
   }
 }
 
+// Indicators
+
 Widget buildStepIndicator(BuildContext context, int currentStep) {
   return Container(
     padding: const EdgeInsets.all(16),
@@ -347,4 +351,71 @@ Widget buildTermInfoDisplay(BuildContext context, TermInfo termInfo) {
       ],
     ),
   );
+}
+
+// Cooldown Handler
+
+class CooldownHandler {
+  final TickerProvider vsync;
+  final Duration forwardDuration;
+  final Duration reverseDuration;
+  final Curve curve;
+  final Curve reverseCurve;
+
+  late final AnimationController controller;
+  late final Animation<double> animation;
+
+  CooldownHandler({
+    required this.vsync,
+    this.forwardDuration = const Duration(milliseconds: 300),
+    this.reverseDuration = const Duration(milliseconds: 3000),
+    this.curve = Curves.easeOut,
+    this.reverseCurve = Curves.easeIn,
+  }) {
+    controller = AnimationController(
+      vsync: vsync,
+      duration: forwardDuration,
+      reverseDuration: reverseDuration,
+    );
+    animation = CurvedAnimation(
+      parent: controller,
+      curve: curve,
+      reverseCurve: reverseCurve,
+    );
+  }
+
+  bool get isCoolingDown => controller.value > 0.001;
+
+  void start({bool Function()? isMounted}) {
+    _runAfterBuild(() {
+      if (isMounted != null && !isMounted()) return;
+      controller.stop();
+      controller.value = 0;
+      controller.forward();
+    });
+  }
+
+  void finish({bool Function()? isMounted}) {
+    _runAfterBuild(() {
+      if (isMounted != null && !isMounted()) return;
+      if (controller.status == AnimationStatus.reverse) return;
+      controller.reverse(from: controller.value);
+    });
+  }
+
+  void dispose() {
+    controller.dispose();
+  }
+
+  void _runAfterBuild(VoidCallback action) {
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    final shouldDefer =
+        phase == SchedulerPhase.persistentCallbacks ||
+        phase == SchedulerPhase.transientCallbacks;
+    if (shouldDefer) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => action());
+      return;
+    }
+    action();
+  }
 }
