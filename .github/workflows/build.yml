@@ -13,13 +13,16 @@ on:
 
   workflow_dispatch:
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+permissions:
+  contents: write
 
 env:
   APP_NAME: "TheBeike"
   FLUTTER_VERSION: "3.38.10"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   meta:
@@ -42,10 +45,6 @@ jobs:
             is_prerelease=false
             tag_name=$(git rev-parse --short HEAD)
           fi
-
-          echo "Tag name: $tag_name"
-          echo "Is release: $is_release"
-          echo "Is prerelease: $is_prerelease"
 
           echo tag_name=$tag_name | tee -a $GITHUB_OUTPUT
           echo is_release=$is_release | tee -a $GITHUB_OUTPUT
