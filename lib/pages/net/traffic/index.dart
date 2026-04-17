@@ -439,7 +439,7 @@ class NetOnlineSessionSection extends StatelessWidget {
       child: Row(
         children: [
           Padding(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(6),
             child: Icon(
               Icons.swap_vert,
               size: 22,
@@ -468,10 +468,13 @@ class NetOnlineSessionSection extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
           IconButton(
             iconSize: 20,
             color: theme.colorScheme.primary,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            padding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
             onPressed: () => showDialog(
               context: context,
               builder: (context) => NetOnlineDeviceShowDialog(
@@ -493,15 +496,19 @@ class NetOnlineSessionSection extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(Icons.devices, color: theme.colorScheme.primary, size: 28),
+                Icon(
+                  Icons.wifi_tethering,
+                  color: theme.colorScheme.primary,
+                  size: 28,
+                ),
                 const SizedBox(width: 12),
-                Text('在线设备', style: theme.textTheme.titleLarge),
+                Text('入网设备', style: theme.textTheme.titleLarge),
               ],
             ),
             const SizedBox(height: 16),
@@ -510,7 +517,7 @@ class NetOnlineSessionSection extends StatelessWidget {
                 height: 120,
                 child: Center(
                   child: Text(
-                    isLoading ? '正在载入在线设备' : '当前无在线设备',
+                    isLoading ? '正在加载入网设备' : '当前无入网设备',
                     style: theme.textTheme.bodyMedium,
                   ),
                 ),
@@ -587,13 +594,26 @@ class NetRealtimeTrafficSection extends StatelessWidget {
         ),
       ],
       gridData: const FlGridData(show: true, drawVerticalLine: false),
-      titlesData: const FlTitlesData(
+      titlesData: FlTitlesData(
         leftTitles: AxisTitles(
-          sideTitles: SideTitles(showTitles: true, reservedSize: 48),
+          sideTitles: SideTitles(
+            showTitles: true,
+            reservedSize: 40,
+            getTitlesWidget: (value, meta) {
+              return Text(
+                value.toStringAsFixed(2),
+                style: theme.textTheme.bodySmall,
+              );
+            },
+          ),
         ),
-        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        bottomTitles: const AxisTitles(
+          sideTitles: SideTitles(showTitles: false),
+        ),
+        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        rightTitles: const AxisTitles(
+          sideTitles: SideTitles(showTitles: false),
+        ),
       ),
       lineTouchData: LineTouchData(
         enabled: true,

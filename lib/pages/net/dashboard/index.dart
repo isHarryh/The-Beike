@@ -425,7 +425,7 @@ class _NetDashboardPageState extends State<NetDashboardPage>
   Widget _buildLoginPromptCard(ThemeData theme) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1010,7 +1010,7 @@ class _NetDashboardPageState extends State<NetDashboardPage>
       child: Row(
         children: [
           Padding(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(6),
             child: Icon(
               size: 22,
               device.isOnline ? Icons.link : Icons.link_off,
@@ -1043,10 +1043,13 @@ class _NetDashboardPageState extends State<NetDashboardPage>
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
           IconButton(
             iconSize: 20,
             color: theme.colorScheme.primary,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            padding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
             onPressed: () => showDialog(
               context: context,
               builder: (context) => NetDeviceShowDialog(
@@ -1071,6 +1074,9 @@ class _NetDashboardPageState extends State<NetDashboardPage>
           IconButton(
             iconSize: 20,
             color: theme.colorScheme.error,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            padding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
             onPressed: () => _handleUnbindMac(device),
             icon: const Icon(Icons.delete_outline),
             tooltip: '解绑设备',
