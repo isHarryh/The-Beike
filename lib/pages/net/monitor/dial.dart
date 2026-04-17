@@ -21,7 +21,7 @@ class _NetDialDrawerState extends State<NetDialDrawer> {
   DialResult? _result;
   bool _isExpanded = false;
 
-  static const String _endpoint = 'https://speed.cloudflare.com/meta';
+  static const String _endpoint = 'https://api.ip.sb/geoip';
   static const Duration _timeout = Duration(seconds: 10);
 
   Future<void> _startDial() async {
@@ -42,22 +42,21 @@ class _NetDialDrawerState extends State<NetDialDrawer> {
       }
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final clientIp = data['clientIp'] as String?;
+      final clientIp = _asString(data['ip']);
       if (clientIp == null) {
         throw const DialParsingException();
       }
 
-      // Parsed as Cloudflare Speed Test metadata
       final result = DialResult(
         clientIp: clientIp,
-        countryCode: data['country'] as String?,
-        cityName: data['city'] as String?,
-        asNumber: data['asn'] is int
-            ? data['asn'] as int
-            : int.tryParse('${data['asn']}'),
-        asOrganization: data['asOrganization'] as String?,
-        latitude: data['latitude'] as String?,
-        longitude: data['longitude'] as String?,
+        country: _asString(data['country']),
+        countryCode: _asString(data['country_code']),
+        asNumber: _asInt(data['asn']),
+        asnOrganization: _asString(data['asn_organization']),
+        isp: _asString(data['isp']),
+        timezone: _asString(data['timezone']),
+        latitude: _asDouble(data['latitude']),
+        longitude: _asDouble(data['longitude']),
         roundTripTime: duration,
       );
 
@@ -104,6 +103,31 @@ class _NetDialDrawerState extends State<NetDialDrawer> {
     if (_isDialing) return '正在拨测';
     if (_result != null || _errorMessage != null) return '重新拨测';
     return '开始拨测';
+  }
+
+  String? _asString(dynamic value) {
+    if (value == null) return null;
+    final text = value.toString().trim();
+    return text.isEmpty ? null : text;
+  }
+
+  int? _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse('${value ?? ''}');
+  }
+
+  double? _asDouble(dynamic value) {
+    if (value is double) return value;
+    if (value is num) return value.toDouble();
+    return double.tryParse('${value ?? ''}');
+  }
+
+  String _formatGeoLocation(double? longitude, double? latitude) {
+    if (longitude == null || latitude == null) {
+      return 'N/A';
+    }
+    return '${longitude.toStringAsFixed(3)}, ${latitude.toStringAsFixed(3)}';
   }
 
   @override
@@ -255,10 +279,8 @@ class _NetDialDrawerState extends State<NetDialDrawer> {
             _buildInfoRow(
               theme,
               label: '出站归属',
-              value: result.countryCode != null
-                  ? (result.cityName != null
-                        ? '${result.countryCode} / ${result.cityName}'
-                        : result.countryCode!)
+              value: result.countryCode != null || result.country != null
+                  ? '${result.countryCode ?? 'N/A'} / ${result.country ?? 'N/A'}'
                   : '未知地区',
             ),
             const SizedBox(height: 16),
@@ -304,15 +326,25 @@ class _NetDialDrawerState extends State<NetDialDrawer> {
               _buildInfoRow(
                 theme,
                 label: 'AS 组织',
-                value: result.asOrganization ?? 'N/A',
+                value: result.asnOrganization ?? 'N/A',
+              ),
+              const SizedBox(height: 12),
+              _buildInfoRow(
+                theme,
+                label: '网络服务提供商',
+                value: result.isp ?? 'N/A',
+              ),
+              const SizedBox(height: 12),
+              _buildInfoRow(
+                theme,
+                label: '时区代码',
+                value: result.timezone ?? 'N/A',
               ),
               const SizedBox(height: 12),
               _buildInfoRow(
                 theme,
                 label: '估计经纬度',
-                value: result.longitude != null && result.latitude != null
-                    ? '${result.longitude}, ${result.latitude}'
-                    : 'N/A',
+                value: _formatGeoLocation(result.longitude, result.latitude),
               ),
               const SizedBox(height: 12),
               _buildInfoRow(
@@ -475,22 +507,26 @@ class _NetDialDrawerState extends State<NetDialDrawer> {
 class DialResult {
   const DialResult({
     required this.clientIp,
+    this.country,
     this.countryCode,
-    this.cityName,
     this.asNumber,
-    this.asOrganization,
+    this.asnOrganization,
+    this.isp,
+    this.timezone,
     this.latitude,
     this.longitude,
     required this.roundTripTime,
   });
 
   final String clientIp;
+  final String? country;
   final String? countryCode;
-  final String? cityName;
   final int? asNumber;
-  final String? asOrganization;
-  final String? latitude;
-  final String? longitude;
+  final String? asnOrganization;
+  final String? isp;
+  final String? timezone;
+  final double? latitude;
+  final double? longitude;
   final int roundTripTime;
 
   bool get isIpv6 => clientIp.contains(':');
