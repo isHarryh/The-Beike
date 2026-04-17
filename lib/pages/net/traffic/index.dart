@@ -1,9 +1,12 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '/pages/net/common/dialog_login.dart';
 import '/types/net.dart';
 import '/utils/app_bar.dart';
 import '/utils/page_mixins.dart';
 import '/utils/sync_embeded.dart';
+import 'dialog_device_show.dart';
 import 'bill.dart';
 
 class NetTrafficPage extends StatefulWidget {
@@ -16,11 +19,16 @@ class NetTrafficPage extends StatefulWidget {
 class _NetTrafficPageState extends State<NetTrafficPage>
     with PageStateMixin, LoadingStateMixin {
   List<NetOnlineSession>? _onlineSessions;
+  final ValueNotifier<List<NetOnlineSession>> _onlineSessionsNotifier =
+      ValueNotifier<List<NetOnlineSession>>([]);
   List<MonthlyBill>? _monthlyBills;
+  static const Duration _requestInterval = Duration(seconds: 2);
+
+  Timer? _refreshTimer;
+  bool _isRefreshingOnlineSessions = false;
 
   int _selectedYear = DateTime.now().year;
   bool _isLoading = false;
-  bool _isRefreshingOnlineDevices = false;
   bool _isLoadingLogin = false;
 
   bool get _isOnline => serviceProvider.netService.isOnline;
@@ -28,6 +36,9 @@ class _NetTrafficPageState extends State<NetTrafficPage>
   @override
   void onServiceInit() {
     _refreshData();
+    if (_isOnline) {
+      _startAutoRefreshOnlineSessions();
+    }
   }
 
   @override
@@ -36,20 +47,65 @@ class _NetTrafficPageState extends State<NetTrafficPage>
       if (!mounted) return;
       setState(() {});
       if (_isOnline) {
+        _startAutoRefreshOnlineSessions();
         _refreshData();
       } else {
+        _stopAutoRefreshOnlineSessions();
         setState(() {
           _onlineSessions = null;
+          _onlineSessionsNotifier.value = [];
           _monthlyBills = null;
         });
       }
     });
   }
 
+  @override
+  void dispose() {
+    _stopAutoRefreshOnlineSessions();
+    _onlineSessionsNotifier.dispose();
+    super.dispose();
+  }
+
+  void _startAutoRefreshOnlineSessions() {
+    _refreshTimer?.cancel();
+
+    _refreshTimer = Timer.periodic(_requestInterval, (timer) {
+      if (!mounted) return;
+
+      _refreshOnlineSessionsSilently();
+    });
+  }
+
+  void _stopAutoRefreshOnlineSessions() {
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
+  }
+
+  Future<void> _refreshOnlineSessionsSilently() async {
+    if (!_isOnline || _isRefreshingOnlineSessions) return;
+
+    _isRefreshingOnlineSessions = true;
+    try {
+      final onlineSessions = await serviceProvider.netService
+          .getOnlineSessionList();
+      if (!mounted) return;
+      setState(() {
+        _onlineSessions = onlineSessions;
+      });
+      _onlineSessionsNotifier.value = onlineSessions;
+    } catch (_) {
+      // Keep the old value when transient refresh errors happen.
+    } finally {
+      _isRefreshingOnlineSessions = false;
+    }
+  }
+
   Future<void> _refreshData() async {
     if (!_isOnline) {
       setState(() {
         _onlineSessions = null;
+        _onlineSessionsNotifier.value = [];
         _monthlyBills = null;
       });
       return;
@@ -58,6 +114,7 @@ class _NetTrafficPageState extends State<NetTrafficPage>
     setState(() {
       _isLoading = true;
       _onlineSessions = null;
+      _onlineSessionsNotifier.value = [];
       _monthlyBills = null;
     });
 
@@ -75,6 +132,7 @@ class _NetTrafficPageState extends State<NetTrafficPage>
       if (!mounted) return;
       setState(() {
         _onlineSessions = onlineSessions;
+        _onlineSessionsNotifier.value = onlineSessions;
         _monthlyBills = sortedBills;
       });
     } catch (e) {
@@ -83,6 +141,7 @@ class _NetTrafficPageState extends State<NetTrafficPage>
       if (!serviceProvider.netService.isOnline) {
         setState(() {
           _onlineSessions = null;
+          _onlineSessionsNotifier.value = [];
           _monthlyBills = null;
         });
       }
@@ -108,38 +167,6 @@ class _NetTrafficPageState extends State<NetTrafficPage>
       }
     } finally {
       if (mounted) setState(() => _isLoadingLogin = false);
-    }
-  }
-
-  Future<void> _refreshOnlineSessions() async {
-    if (!_isOnline) return;
-
-    setState(() {
-      _isRefreshingOnlineDevices = true;
-      _onlineSessions = null;
-    });
-
-    try {
-      final onlineSessions = await serviceProvider.netService
-          .getOnlineSessionList();
-      if (!mounted) return;
-      setState(() {
-        _onlineSessions = onlineSessions;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setError('刷新在线设备失败：$e');
-      if (!serviceProvider.netService.isOnline) {
-        setState(() {
-          _onlineSessions = null;
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isRefreshingOnlineDevices = false;
-        });
-      }
     }
   }
 
@@ -198,9 +225,8 @@ class _NetTrafficPageState extends State<NetTrafficPage>
                 if (_isOnline) ...[
                   NetOnlineSessionSection(
                     sessions: _onlineSessions ?? [],
+                    sessionsListenable: _onlineSessionsNotifier,
                     isLoading: _isLoading,
-                    isRefreshing: _isRefreshingOnlineDevices,
-                    onRefresh: _refreshOnlineSessions,
                   ),
                   const SizedBox(height: 16),
                   NetMonthlyBillSection(
@@ -271,46 +297,77 @@ class _NetTrafficPageState extends State<NetTrafficPage>
 
 class NetOnlineSessionSection extends StatelessWidget {
   final List<NetOnlineSession> sessions;
+  final ValueListenable<List<NetOnlineSession>> sessionsListenable;
   final bool isLoading;
-  final bool isRefreshing;
-  final VoidCallback onRefresh;
 
   const NetOnlineSessionSection({
     super.key,
     required this.sessions,
+    required this.sessionsListenable,
     required this.isLoading,
-    required this.isRefreshing,
-    required this.onRefresh,
   });
 
-  String _twoDigits(int value) {
-    return value.toString().padLeft(2, '0');
-  }
-
-  String _formatDateTime(DateTime dateTime) {
-    return '${dateTime.year}-${_twoDigits(dateTime.month)}-${_twoDigits(dateTime.day)} '
-        '${_twoDigits(dateTime.hour)}:${_twoDigits(dateTime.minute)}:${_twoDigits(dateTime.second)}';
-  }
-
-  String _formatDuration(int minutes) {
-    if (minutes >= 60 * 24) {
-      final days = minutes ~/ (60 * 24);
-      final hours = (minutes % (60 * 24)) ~/ 60;
-      return '${days}天${hours}小时';
+  Widget _buildOnlineSessionListTile(
+    ThemeData theme,
+    BuildContext context,
+    NetOnlineSession session,
+  ) {
+    var displayMac = session.mac.toUpperCase();
+    if (RegExp(r'^[0-9A-F]{12}$').hasMatch(displayMac)) {
+      displayMac = displayMac.replaceAllMapped(
+        RegExp(r'.{2}'),
+        (match) => '${match.group(0)}:',
+      );
+      displayMac = displayMac.substring(0, displayMac.length - 1);
     }
-    if (minutes >= 60) {
-      final hours = minutes ~/ 60;
-      final leftMinutes = minutes % 60;
-      return '${hours}小时${leftMinutes}分钟';
-    }
-    return '${minutes}分钟';
-  }
 
-  String _formatFlow(double mb) {
-    if (mb >= 1024) {
-      return '${(mb / 1024).toStringAsFixed(3)} GB';
-    }
-    return '${mb.toStringAsFixed(3)} MB';
+    final deviceName = session.deviceName.trim();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Icon(Icons.link, size: 22, color: theme.colorScheme.primary),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  displayMac,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontFamily: 'monospace',
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  deviceName.isNotEmpty ? deviceName : '未命名设备',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            iconSize: 20,
+            color: theme.colorScheme.primary,
+            onPressed: () => showDialog(
+              context: context,
+              builder: (context) => NetOnlineDeviceShowDialog(
+                session: session,
+                sessionsListenable: sessionsListenable,
+              ),
+            ),
+            icon: const Icon(Icons.info_outline),
+            tooltip: '详情',
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -328,17 +385,6 @@ class NetOnlineSessionSection extends StatelessWidget {
                 Icon(Icons.devices, color: theme.colorScheme.primary, size: 28),
                 const SizedBox(width: 12),
                 Text('在线设备', style: theme.textTheme.titleLarge),
-                const Spacer(),
-                IconButton(
-                  onPressed: isRefreshing ? null : onRefresh,
-                  icon: isRefreshing
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.refresh),
-                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -353,48 +399,15 @@ class NetOnlineSessionSection extends StatelessWidget {
                 ),
               )
             else
-              Center(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    headingTextStyle: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                    columns: const [
-                      DataColumn(label: Text('上线时间')),
-                      DataColumn(label: Text('IP地址')),
-                      DataColumn(label: Text('MAC地址')),
-                      DataColumn(label: Text('使用时长')),
-                      DataColumn(label: Text('下行流量')),
-                      DataColumn(label: Text('设备名称')),
-                    ],
-                    rows: sessions
-                        .map(
-                          (session) => DataRow(
-                            cells: [
-                              DataCell(
-                                Text(_formatDateTime(session.loginTime)),
-                              ),
-                              DataCell(Text(session.ip)),
-                              DataCell(Text(session.mac)),
-                              DataCell(
-                                Text(_formatDuration(session.useTimeMinutes)),
-                              ),
-                              DataCell(Text(_formatFlow(session.downFlowMb))),
-                              DataCell(
-                                Text(
-                                  session.deviceName.trim().isEmpty
-                                      ? '未命名设备'
-                                      : session.deviceName,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ),
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: sessions.length,
+                separatorBuilder: (_, _) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final session = sessions[index];
+                  return _buildOnlineSessionListTile(theme, context, session);
+                },
               ),
           ],
         ),
