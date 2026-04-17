@@ -26,6 +26,10 @@ abstract class BaseNetService extends ChangeNotifier with BaseService {
 
   Future<NetUserInfo> getUser();
 
+  Future<List<NetOnlineSession>> getOnlineSessionList();
+
+  Future<List<NetLoginHistory>> getLoginHistoryList();
+
   Future<List<MacDevice>> getDeviceList();
 
   Future<void> doBindMac({
@@ -65,7 +69,6 @@ abstract class BaseNetService extends ChangeNotifier with BaseService {
   @protected
   void updateSessionState(NetDashboardSessionState newState) {
     _cachedSessionState = newState;
-    notifyListeners();
   }
 
   NetDashboardSessionState? get cachedSessionState => _cachedSessionState;

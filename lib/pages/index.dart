@@ -81,6 +81,13 @@ class _HomePageState extends State<HomePage>
       color: Colors.teal,
       route: '/net/dashboard',
     ),
+    _FeatureCardConfig(
+      title: '流量查询',
+      description: '查看流量与费用明细',
+      icon: Icons.receipt_long,
+      color: Colors.cyan,
+      route: '/net/traffic',
+    ),
   ];
 
   @override

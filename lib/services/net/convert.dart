@@ -243,6 +243,135 @@ extension MonthlyBillExtension on MonthlyBill {
   }
 }
 
+extension NetOnlineSessionExtension on NetOnlineSession {
+  static List<NetOnlineSession> parse(dynamic jsonData) {
+    if (jsonData is! List) {
+      throw const NetServiceBadResponse('Invalid online session payload');
+    }
+
+    final sessions = <NetOnlineSession>[];
+
+    for (final row in jsonData) {
+      if (row is! Map) {
+        continue;
+      }
+
+      try {
+        int? parseOptionalInt(dynamic value) {
+          if (value == null) return null;
+          return int.tryParse(value.toString());
+        }
+
+        double parseFlowInMb(dynamic value) {
+          final parsed = double.tryParse(value.toString());
+          if (parsed == null) {
+            throw const NetServiceBadResponse('Invalid flow value');
+          }
+          return parsed / 1024.0;
+        }
+
+        int parseRequiredInt(dynamic value, String fieldName) {
+          final parsed = int.tryParse(value.toString());
+          if (parsed == null) {
+            throw NetServiceBadResponse('Invalid $fieldName value');
+          }
+          return parsed;
+        }
+
+        final loginTimeRaw = row['loginTime']?.toString();
+        final loginTime = loginTimeRaw == null
+            ? null
+            : DateTime.tryParse(loginTimeRaw);
+        if (loginTime == null) {
+          throw const NetServiceBadResponse('Invalid loginTime value');
+        }
+
+        sessions.add(
+          NetOnlineSession(
+            deviceName: row['hostName']?.toString() ?? '',
+            ip: row['ip']?.toString() ?? '',
+            mac: row['mac']?.toString() ?? '',
+            sessionId: row['sessionId']?.toString(),
+            terminalType: row['terminalType']?.toString(),
+            downFlowMb: parseFlowInMb(row['downFlow']),
+            upFlowMb: parseFlowInMb(row['upFlow']),
+            loginTime: loginTime,
+            useTimeMinutes: parseRequiredInt(row['useTime'], 'useTime') ~/ 60,
+            brasId: parseOptionalInt(row['brasid']),
+            userId: parseOptionalInt(row['userId']),
+          ),
+        );
+      } catch (e) {
+        if (kDebugMode) {
+          print('Failed to parse online session row: $e');
+        }
+      }
+    }
+
+    return sessions;
+  }
+}
+
+extension NetLoginHistoryExtension on NetLoginHistory {
+  static List<NetLoginHistory> parse(dynamic jsonData) {
+    if (jsonData is! List) {
+      throw const NetServiceBadResponse('Invalid login history payload');
+    }
+
+    final histories = <NetLoginHistory>[];
+
+    for (final row in jsonData) {
+      if (row is! List || row.length < 9) {
+        continue;
+      }
+
+      try {
+        final loginMs = row[0] is num ? (row[0] as num).toInt() : null;
+        final logoutMs = row[1] is num ? (row[1] as num).toInt() : null;
+        if (loginMs == null) {
+          throw const NetServiceBadResponse('Invalid login timestamp');
+        }
+
+        final loginTime = DateTime.fromMillisecondsSinceEpoch(loginMs);
+        final logoutTime = logoutMs == null || logoutMs <= 0
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(logoutMs);
+
+        final usedTimeMinutes = row[4] is num
+            ? (row[4] as num).toInt()
+            : int.tryParse(row[4].toString()) ?? 0;
+        final usedFlowMb = row[5] is num
+            ? (row[5] as num).toDouble()
+            : double.tryParse(row[5].toString()) ?? 0;
+
+        final terminalType = row.length > 9
+            ? (row[9]?.toString() ??
+                  (row.length > 10 ? row[10]?.toString() : null))
+            : null;
+
+        histories.add(
+          NetLoginHistory(
+            deviceName: row[8]?.toString() ?? '',
+            ip: row[2]?.toString() ?? '',
+            mac: row[3]?.toString() ?? '',
+            terminalType: terminalType,
+            usedFlowMb: usedFlowMb,
+            loginTime: loginTime,
+            logoutTime: logoutTime,
+            usedTimeMinutes: usedTimeMinutes,
+          ),
+        );
+      } catch (e) {
+        if (kDebugMode) {
+          print('Failed to parse login history row: $e');
+        }
+      }
+    }
+
+    return histories;
+  }
+}
+
 extension RealtimeUsageExtension on RealtimeUsage {
   static final v4Regex = RegExp(r'"v4"\s*:\s*([\d.]+)', caseSensitive: false);
   static final v6Regex = RegExp(r'"v6"\s*:\s*([\d.]+)', caseSensitive: false);

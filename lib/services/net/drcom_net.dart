@@ -146,6 +146,63 @@ class DrcomNetService extends BaseNetService {
   }
 
   @override
+  Future<List<NetOnlineSession>> getOnlineSessionList() async {
+    if (isOffline) {
+      throw const NetServiceOffline();
+    }
+
+    try {
+      final response = await _dio.get(
+        '/Self/dashboard/getOnlineList',
+        queryParameters: {
+          't': Random().nextDouble().toString(),
+          'order': 'asc',
+          '_': DateTime.now().millisecondsSinceEpoch.toString(),
+        },
+        options: Options(responseType: ResponseType.plain),
+      );
+      NetServiceException.raiseForStatus(response.statusCode!, setOffline);
+
+      final decoded = json.decode(response.data as String);
+      return NetOnlineSessionExtension.parse(decoded);
+    } on NetServiceException {
+      rethrow;
+    } catch (e) {
+      throw NetServiceNetworkError('Failed to load online session list', e);
+    }
+  }
+
+  @override
+  Future<List<NetLoginHistory>> getLoginHistoryList() async {
+    if (isOffline) {
+      throw const NetServiceOffline();
+    }
+
+    try {
+      final response = await _dio.get(
+        '/Self/dashboard/getLoginHistory',
+        queryParameters: {
+          't': Random().nextDouble().toString(),
+          'pageSize': '25',
+          'pageNumber': '1',
+          'sortName': 'loginTime',
+          'sortOrder': 'desc',
+          '_': DateTime.now().millisecondsSinceEpoch.toString(),
+        },
+        options: Options(responseType: ResponseType.plain),
+      );
+      NetServiceException.raiseForStatus(response.statusCode!, setOffline);
+
+      final decoded = json.decode(response.data as String);
+      return NetLoginHistoryExtension.parse(decoded);
+    } on NetServiceException {
+      rethrow;
+    } catch (e) {
+      throw NetServiceNetworkError('Failed to load login history list', e);
+    }
+  }
+
+  @override
   Future<void> doBindMac({
     required String macAddress,
     required String terminalName,

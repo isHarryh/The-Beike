@@ -242,6 +242,116 @@ class MonthlyBill extends BaseDataClass {
   Map<String, dynamic> toJson() => _$MonthlyBillToJson(this);
 }
 
+class NetOnlineSession extends BaseDataClass {
+  final String deviceName;
+  final String ip;
+  final String mac;
+  final String? sessionId;
+  final String? terminalType;
+  final double downFlowMb;
+  final double upFlowMb;
+  final DateTime loginTime;
+  final int useTimeMinutes;
+  final int? brasId;
+  final int? userId;
+
+  NetOnlineSession({
+    required this.deviceName,
+    required this.ip,
+    required this.mac,
+    this.sessionId,
+    this.terminalType,
+    required this.downFlowMb,
+    required this.upFlowMb,
+    required this.loginTime,
+    required this.useTimeMinutes,
+    required this.brasId,
+    required this.userId,
+  });
+
+  @override
+  Map<String, dynamic> getEssentials() {
+    return {
+      'hostName': deviceName,
+      'ip': ip,
+      'mac': mac,
+      'sessionId': sessionId,
+      'terminalType': terminalType,
+      'downFlowMb': downFlowMb,
+      'upFlowMb': upFlowMb,
+      'loginTime': loginTime.toIso8601String(),
+      'useTimeMinutes': useTimeMinutes,
+    };
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'hostName': deviceName,
+      'ip': ip,
+      'mac': mac,
+      'sessionId': sessionId,
+      'terminalType': terminalType,
+      'downFlowMb': downFlowMb,
+      'upFlowMb': upFlowMb,
+      'loginTime': loginTime.toIso8601String(),
+      'useTimeMinutes': useTimeMinutes,
+      'brasId': brasId,
+      'userId': userId,
+    };
+  }
+}
+
+class NetLoginHistory extends BaseDataClass {
+  final String deviceName;
+  final String ip;
+  final String mac;
+  final String? terminalType;
+  final double usedFlowMb;
+  final DateTime loginTime;
+  final DateTime? logoutTime;
+  final int usedTimeMinutes;
+
+  NetLoginHistory({
+    required this.deviceName,
+    required this.ip,
+    required this.mac,
+    this.terminalType,
+    required this.usedFlowMb,
+    required this.loginTime,
+    this.logoutTime,
+    required this.usedTimeMinutes,
+  });
+
+  @override
+  Map<String, dynamic> getEssentials() {
+    return {
+      'deviceName': deviceName,
+      'ip': ip,
+      'mac': mac,
+      'terminalType': terminalType,
+      'usedFlowMb': usedFlowMb,
+      'loginTime': loginTime.toIso8601String(),
+      'logoutTime': logoutTime?.toIso8601String(),
+      'usedTimeMinutes': usedTimeMinutes,
+    };
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'deviceName': deviceName,
+      'ip': ip,
+      'mac': mac,
+      'terminalType': terminalType,
+      'usedFlowMb': usedFlowMb,
+      'loginTime': loginTime.toIso8601String(),
+      'logoutTime': logoutTime?.toIso8601String(),
+      'usedTimeMinutes': usedTimeMinutes,
+    };
+  }
+}
+
 @JsonSerializable()
 class RealtimeUsage extends BaseDataClass {
   final double v4;

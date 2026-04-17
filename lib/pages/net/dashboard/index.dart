@@ -4,7 +4,6 @@ import '/types/net.dart';
 import '/utils/app_bar.dart';
 import '/utils/page_mixins.dart';
 import '/utils/sync_embeded.dart';
-import 'bill.dart';
 import 'dialog_change_pswd.dart';
 import 'dialog_login.dart';
 import 'dialog_device_show.dart';
@@ -23,13 +22,10 @@ class _NetDashboardPageState extends State<NetDashboardPage>
     with PageStateMixin, LoadingStateMixin {
   NetUserInfo? _userInfo;
   List<MacDevice>? _macDevices;
-  List<MonthlyBill>? _monthlyBills;
-  int _selectedYear = DateTime.now().year;
 
   bool _isLoggingOut = false;
   bool _isLoadingLogin = false;
   bool _isRefreshingDevices = false;
-  bool _isLoadingBills = false;
   bool _isRefreshingUser = false;
 
   bool get _isOnline => serviceProvider.netService.isOnline;
@@ -50,7 +46,6 @@ class _NetDashboardPageState extends State<NetDashboardPage>
         setState(() {
           _userInfo = null;
           _macDevices = null;
-          _monthlyBills = null;
         });
       }
     });
@@ -61,7 +56,6 @@ class _NetDashboardPageState extends State<NetDashboardPage>
       setState(() {
         _userInfo = null;
         _macDevices = null;
-        _monthlyBills = null;
       });
       return;
     }
@@ -71,18 +65,13 @@ class _NetDashboardPageState extends State<NetDashboardPage>
       final results = await Future.wait([
         serviceProvider.netService.getUser(),
         serviceProvider.netService.getDeviceList(),
-        serviceProvider.netService.getMonthPay(year: _selectedYear),
       ]);
       final info = results[0] as NetUserInfo;
       final macDevices = results[1] as List<MacDevice>;
-      final monthlyBills = results[2] as List<MonthlyBill>;
-      final sortedBills = List<MonthlyBill>.from(monthlyBills)
-        ..sort((a, b) => a.createTime.compareTo(b.createTime));
       if (!mounted) return;
       setState(() {
         _userInfo = info;
         _macDevices = macDevices;
-        _monthlyBills = sortedBills;
       });
     } catch (e) {
       if (!mounted) return;
@@ -91,7 +80,6 @@ class _NetDashboardPageState extends State<NetDashboardPage>
         setState(() {
           _userInfo = null;
           _macDevices = null;
-          _monthlyBills = null;
         });
       }
     } finally {
@@ -115,7 +103,6 @@ class _NetDashboardPageState extends State<NetDashboardPage>
         setState(() {
           _userInfo = null;
           _macDevices = null;
-          _monthlyBills = null;
         });
       }
     } finally {
@@ -140,40 +127,10 @@ class _NetDashboardPageState extends State<NetDashboardPage>
         setState(() {
           _userInfo = null;
           _macDevices = null;
-          _monthlyBills = null;
         });
       }
     } finally {
       if (mounted) setState(() => _isRefreshingDevices = false);
-    }
-  }
-
-  Future<void> _refreshBills() async {
-    if (!_isOnline) return;
-    setState(() {
-      _isLoadingBills = true;
-      _monthlyBills = null;
-    });
-    try {
-      final monthlyBills = await serviceProvider.netService.getMonthPay(
-        year: _selectedYear,
-      );
-      final sortedBills = List<MonthlyBill>.from(monthlyBills)
-        ..sort((a, b) => a.createTime.compareTo(b.createTime));
-      if (!mounted) return;
-      setState(() => _monthlyBills = sortedBills);
-    } catch (e) {
-      if (!mounted) return;
-      setError('刷新月度账单失败：$e');
-      if (!serviceProvider.netService.isOnline) {
-        setState(() {
-          _userInfo = null;
-          _macDevices = null;
-          _monthlyBills = null;
-        });
-      }
-    } finally {
-      if (mounted) setState(() => _isLoadingBills = false);
     }
   }
 
@@ -284,7 +241,6 @@ class _NetDashboardPageState extends State<NetDashboardPage>
             setState(() {
               _userInfo = null;
               _macDevices = null;
-              _monthlyBills = null;
             });
           }
         } catch (e) {
@@ -293,7 +249,6 @@ class _NetDashboardPageState extends State<NetDashboardPage>
             setState(() {
               _userInfo = null;
               _macDevices = null;
-              _monthlyBills = null;
             });
           }
         }
@@ -454,23 +409,6 @@ class _NetDashboardPageState extends State<NetDashboardPage>
                   ),
                   const SizedBox(height: 16),
                   _buildMacListCard(theme),
-                  if (_monthlyBills != null || _isLoadingBills) ...[
-                    const SizedBox(height: 16),
-                    NetMonthlyBillSection(
-                      year: _selectedYear,
-                      bills: _monthlyBills ?? [],
-                      onYearChanged: (newYear) {
-                        if (newYear < 1970 || newYear > DateTime.now().year) {
-                          return;
-                        }
-                        setState(() {
-                          _selectedYear = newYear;
-                        });
-                        _refreshBills();
-                      },
-                      isLoading: _isLoadingBills,
-                    ),
-                  ],
                 ],
 
                 if (_userInfo == null && (!_isOnline || hasError))
@@ -503,7 +441,8 @@ class _NetDashboardPageState extends State<NetDashboardPage>
             ),
             const SizedBox(height: 16),
             Text(
-              '登录后，您可以在此查看校园网的账户余额、已绑定的设备和月度账单情况。',
+              '登录后，您可以在此查看校园网的账户余额和已绑定设备。\n'
+              '流量查询请前往“流量查询”页面查看。',
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 24),
