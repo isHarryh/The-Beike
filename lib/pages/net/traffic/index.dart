@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '/pages/net/dashboard/dialog_login.dart';
+import '/pages/net/common/dialog_login.dart';
 import '/types/net.dart';
 import '/utils/app_bar.dart';
 import '/utils/page_mixins.dart';

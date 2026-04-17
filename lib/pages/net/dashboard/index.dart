@@ -1,11 +1,12 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '/pages/net/common/dialog_login.dart';
+import '/pages/net/common/wavy_bar.dart';
 import '/types/net.dart';
 import '/utils/app_bar.dart';
 import '/utils/page_mixins.dart';
 import '/utils/sync_embeded.dart';
 import 'dialog_change_pswd.dart';
-import 'dialog_login.dart';
 import 'dialog_device_show.dart';
 import 'dialog_device_add.dart';
 import 'dialog_plan_show.dart';
@@ -779,7 +780,7 @@ class _NetDashboardPageState extends State<NetDashboardPage>
               builder: (context, constraints) {
                 if (isOverLimit) {
                   // Case Over Limit
-                  return _AnimatedWavyBar(
+                  return NetAnimatedWavyBar(
                     ratio: 1.0,
                     color: backgroundColor,
                     maxWidth: constraints.maxWidth,
@@ -804,7 +805,7 @@ class _NetDashboardPageState extends State<NetDashboardPage>
                     Container(color: backgroundColor),
                     // Left side color (Used or Limit) with wavy edge
                     if (ratio > 0)
-                      _AnimatedWavyBar(
+                      NetAnimatedWavyBar(
                         ratio: ratio,
                         color: theme.colorScheme.primary,
                         maxWidth: constraints.maxWidth,
@@ -1076,111 +1077,6 @@ class _NetDashboardPageState extends State<NetDashboardPage>
           ),
         ],
       ),
-    );
-  }
-}
-
-class _WavyRightClipper extends CustomClipper<Path> {
-  final double baseWidth;
-  final double waveHeight;
-  final double waveCount;
-  final double offset;
-
-  _WavyRightClipper({
-    required this.baseWidth,
-    required this.waveHeight,
-    required this.waveCount,
-    required this.offset,
-  });
-
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-    path.lineTo(baseWidth, 0);
-
-    const double step = 0.5;
-    for (double y = 0; y <= size.height; y += step) {
-      final double normalizedY = y / size.height;
-      final double xOffset =
-          math.sin((normalizedY * waveCount + offset) * 2 * math.pi) *
-          waveHeight;
-      path.lineTo(baseWidth + xOffset, y);
-    }
-
-    path.lineTo(0, size.height);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(_WavyRightClipper oldClipper) =>
-      oldClipper.offset != offset ||
-      oldClipper.baseWidth != baseWidth ||
-      oldClipper.waveHeight != waveHeight ||
-      oldClipper.waveCount != waveCount;
-}
-
-class _AnimatedWavyBar extends StatefulWidget {
-  final double ratio;
-  final Color color;
-  final double maxWidth;
-  final Widget? child;
-
-  const _AnimatedWavyBar({
-    required this.ratio,
-    required this.color,
-    required this.maxWidth,
-    this.child,
-  });
-
-  @override
-  State<_AnimatedWavyBar> createState() => _AnimatedWavyBarState();
-}
-
-class _AnimatedWavyBarState extends State<_AnimatedWavyBar>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    const double waveHeight = 2.0;
-
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        // If ratio is 1.0, we pull the base width back slightly to ensure
-        // the wave peaks (baseWidth + waveHeight) don't get cut by the container edge.
-        final double baseWidth = widget.ratio >= 1.0
-            ? (widget.maxWidth - waveHeight)
-            : (widget.maxWidth * widget.ratio);
-
-        return ClipPath(
-          clipper: _WavyRightClipper(
-            baseWidth: baseWidth,
-            offset: _controller.value,
-            waveHeight: waveHeight,
-            waveCount: 0.618,
-          ),
-          child:
-              widget.child ??
-              Container(width: widget.maxWidth, color: widget.color),
-        );
-      },
     );
   }
 }
