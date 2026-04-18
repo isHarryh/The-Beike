@@ -7,6 +7,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import '/utils/meta_info.dart';
 
 class NetDialDrawer extends StatefulWidget {
   const NetDialDrawer({super.key});
@@ -24,6 +25,23 @@ class _NetDialDrawerState extends State<NetDialDrawer> {
   static const String _endpoint = 'https://api.ip.sb/geoip';
   static const Duration _timeout = Duration(seconds: 10);
 
+  String _buildUserAgent() {
+    try {
+      return 'TheBeike-GUI/${MetaInfo.instance.appVersion}';
+    } catch (_) {
+      return 'TheBeike-GUI/unknown';
+    }
+  }
+
+  Map<String, String> _buildRequestHeaders() {
+    final userAgent = _buildUserAgent();
+    return {
+      'User-Agent': userAgent,
+      'UC': userAgent,
+      'Accept': 'application/json',
+    };
+  }
+
   Future<void> _startDial() async {
     setState(() {
       _isDialing = true;
@@ -33,7 +51,9 @@ class _NetDialDrawerState extends State<NetDialDrawer> {
     try {
       final uri = Uri.parse(_endpoint);
       final startTime = DateTime.now();
-      final response = await http.get(uri).timeout(_timeout);
+      final response = await http
+          .get(uri, headers: _buildRequestHeaders())
+          .timeout(_timeout);
       final endTime = DateTime.now();
       final duration = endTime.difference(startTime).inMilliseconds;
 
