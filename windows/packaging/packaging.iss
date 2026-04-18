@@ -5,7 +5,7 @@
 
 #define MyAppName "TheBeike"
 #define MyAppFileName "the_beike"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "Harry Huang"
 #define MyAppURL "https://thebeike.cn/"
 
