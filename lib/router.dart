@@ -12,7 +12,6 @@ import 'pages/courses/grade/index.dart';
 import 'pages/courses/account/index.dart';
 import 'pages/net/dashboard/index.dart';
 import 'pages/net/traffic/index.dart';
-import 'pages/net/monitor/index.dart';
 import 'pages/sync/index.dart';
 import 'pages/more/anno.dart';
 import 'pages/more/settings.dart';
@@ -56,12 +55,6 @@ class _AppConstants {
       title: '成绩',
       path: '/courses/grade',
       category: '教务',
-    ),
-    _NavigationItem(
-      icon: Icons.swap_vert,
-      title: '流量监视',
-      path: '/net/monitor',
-      category: '校园网',
     ),
     _NavigationItem(
       icon: Icons.wifi,
@@ -133,11 +126,6 @@ class AppRouter {
         name: 'GradeRoute',
         path: '/courses/grade',
         builder: (context, data) => const MainLayout(child: GradePage()),
-      ),
-      NamedRouteDef(
-        name: 'NetMonitorRoute',
-        path: '/net/monitor',
-        builder: (context, data) => const MainLayout(child: NetMonitorPage()),
       ),
       NamedRouteDef(
         name: 'NetDashboardRoute',

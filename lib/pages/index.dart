@@ -68,13 +68,6 @@ class _HomePageState extends State<HomePage>
 
   late final List<_FeatureCardConfig> _netFeatureCards = [
     _FeatureCardConfig(
-      title: '流量监视',
-      description: '实时监控网络流量',
-      icon: Icons.swap_vert,
-      color: Colors.green,
-      route: '/net/monitor',
-    ),
-    _FeatureCardConfig(
       title: '自助服务',
       description: '账户管理和账单查询',
       icon: Icons.wifi,

@@ -59,11 +59,6 @@ abstract class BaseNetService extends ChangeNotifier with BaseService {
     required DateTime endTime,
   });
 
-  Future<RealtimeUsage> getRealtimeUsage(
-    String username, {
-    required bool viaVpn,
-  });
-
   // Methods that already implemented:
 
   @protected

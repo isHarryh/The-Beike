@@ -470,38 +470,6 @@ class DrcomNetService extends BaseNetService {
     }
   }
 
-  @override
-  Future<RealtimeUsage> getRealtimeUsage(
-    String username, {
-    required bool viaVpn,
-  }) async {
-    try {
-      const usageServerUrl = 'http://202.204.48.82:801';
-      const usageServerElib =
-          'https://elib.ustb.edu.cn/http-801/77726476706e69737468656265737421a2a713d275603c1e2a50c7face';
-      final randomNum = Random().nextInt(1000000).toString();
-      final base = viaVpn ? usageServerElib : usageServerUrl;
-
-      // Use a separate Dio instance for this external service
-      final usageDio = Dio();
-      final response = await usageDio.get(
-        '$base/eportal/portal/visitor/loadUserFlow'
-        '?callback=dr1003'
-        '&account=$username'
-        '&jsVersion=4.1'
-        '&v=$randomNum'
-        '&lang=zh',
-        options: Options(responseType: ResponseType.plain),
-      );
-      NetServiceException.raiseForStatus(response.statusCode!);
-      return RealtimeUsageExtension.parse(response.data as String);
-    } on NetServiceException {
-      rethrow;
-    } catch (e) {
-      throw NetServiceNetworkError('Failed to load realtime usage', e);
-    }
-  }
-
   Future<void> refreshCsrfFrom(String path) async {
     if (isOffline) {
       throw const NetServiceOffline();

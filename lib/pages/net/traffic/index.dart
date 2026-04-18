@@ -9,6 +9,7 @@ import '/utils/page_mixins.dart';
 import '/utils/sync_embeded.dart';
 import 'dialog_device_show.dart';
 import 'bill.dart';
+import 'dial.dart';
 
 class NetTrafficPage extends StatefulWidget {
   const NetTrafficPage({super.key});
@@ -19,6 +20,7 @@ class NetTrafficPage extends StatefulWidget {
 
 class _NetTrafficPageState extends State<NetTrafficPage>
     with PageStateMixin, LoadingStateMixin {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   List<NetOnlineSession>? _onlineSessions;
   final ValueNotifier<List<NetOnlineSession>> _onlineSessionsNotifier =
       ValueNotifier<List<NetOnlineSession>>([]);
@@ -266,7 +268,18 @@ class _NetTrafficPageState extends State<NetTrafficPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const PageAppBar(title: '校园网流量查询'),
+      key: _scaffoldKey,
+      appBar: PageAppBar(
+        title: '校园网流量查询',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.speed),
+            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+            tooltip: '网络拨测',
+          ),
+        ],
+      ),
+      endDrawer: const Drawer(child: NetDialDrawer()),
       body: SyncPowered(childBuilder: (context) => _buildBody(context)),
     );
   }

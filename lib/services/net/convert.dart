@@ -371,32 +371,3 @@ extension NetLoginHistoryExtension on NetLoginHistory {
     return histories;
   }
 }
-
-extension RealtimeUsageExtension on RealtimeUsage {
-  static final v4Regex = RegExp(r'"v4"\s*:\s*([\d.]+)', caseSensitive: false);
-  static final v6Regex = RegExp(r'"v6"\s*:\s*([\d.]+)', caseSensitive: false);
-
-  static RealtimeUsage parse(String jsStr) {
-    final v4Match = v4Regex.firstMatch(jsStr);
-    final v6Match = v6Regex.firstMatch(jsStr);
-
-    final v4Str = v4Match?.group(1)?.trim();
-    final v6Str = v6Match?.group(1)?.trim();
-
-    if (v4Str == null || v4Str.isEmpty) {
-      throw const NetServiceException('Failed to parse v4 usage');
-    }
-    if (v6Str == null || v6Str.isEmpty) {
-      throw const NetServiceException('Failed to parse v6 usage');
-    }
-
-    final v4 = double.tryParse(v4Str);
-    final v6 = double.tryParse(v6Str);
-
-    if (v4 == null || v6 == null) {
-      throw const NetServiceException('Failed to parse usage values');
-    }
-
-    return RealtimeUsage(v4: v4, v6: v6, time: DateTime.now());
-  }
-}
