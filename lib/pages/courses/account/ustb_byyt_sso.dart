@@ -45,14 +45,12 @@ class _SsoLoginDialogState extends State<_SsoLoginDialog> {
   }
 
   void _onServiceStatusChanged() async {
-    if (mounted) {
-      final service = _serviceProvider.coursesService;
-      if (service.isOnline) {
-        if (mounted) {
-          await Future.delayed(const Duration(milliseconds: 500));
-          // Close dialog on successful login
-          Navigator.of(context).pop();
-        }
+    final service = _serviceProvider.coursesService;
+    if (mounted && service.isOnline) {
+      await Future.delayed(const Duration(milliseconds: 500));
+      // Close dialog on successful login
+      if (mounted) {
+        Navigator.of(context).pop();
       }
     }
   }

@@ -114,7 +114,8 @@ class CurriculumTable extends StatelessWidget {
     String? displayMonth;
     String? displayYear;
 
-    for (final calendarDay in curriculumData.calendarDays!) {
+    final calendarDays = curriculumData.calendarDays ?? const <CalendarDay>[];
+    for (final calendarDay in calendarDays) {
       if (calendarDay.weekIndex == currentWeek) {
         displayMonth = '${calendarDay.month}月';
         displayYear = '${calendarDay.year}年';

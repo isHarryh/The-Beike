@@ -58,7 +58,9 @@ class _NetDeviceShowDialogState extends State<NetDeviceShowDialog> {
           ).showSnackBar(const SnackBar(content: Text('重命名设备失败')));
         }
       }
-      Navigator.of(context).pop();
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
     }
   }
 

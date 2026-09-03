@@ -227,7 +227,7 @@ class _SyncPairingCardState extends State<SyncPairingCard> {
     } catch (e) {
       widget.onError(e);
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -326,11 +326,13 @@ class _SyncPairingCardState extends State<SyncPairingCard> {
       final updatedData = _syncData!.copyWith(groupId: result.groupId);
       await _saveSyncData(updatedData);
 
-      setState(() {
-        _devices = result.devices;
-        _showJoinInput = false;
-        _joinCodeController.clear();
-      });
+      if (mounted) {
+        setState(() {
+          _devices = result.devices;
+          _showJoinInput = false;
+          _joinCodeController.clear();
+        });
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(
@@ -341,7 +343,7 @@ class _SyncPairingCardState extends State<SyncPairingCard> {
     } catch (e) {
       widget.onError(e);
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -390,12 +392,14 @@ class _SyncPairingCardState extends State<SyncPairingCard> {
         );
         await _saveSyncData(updatedData);
 
-        setState(() {
-          _pairCode = null;
-          _pairCodeExpiry = null;
-          _lastClosedPairCode = null;
-          _devices = null;
-        });
+        if (mounted) {
+          setState(() {
+            _pairCode = null;
+            _pairCodeExpiry = null;
+            _lastClosedPairCode = null;
+            _devices = null;
+          });
+        }
 
         // Stop refresh timer when leaving group
         _refreshTimer?.cancel();
@@ -419,7 +423,7 @@ class _SyncPairingCardState extends State<SyncPairingCard> {
     } catch (e) {
       widget.onError(e);
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 

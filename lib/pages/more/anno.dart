@@ -39,10 +39,10 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
       final announcements = await _serviceProvider.syncService
           .getAnnouncements();
 
-      if (mounted) {
-        // Process read status
-        await _processReadStatus(announcements);
+      // Process read status
+      await _processReadStatus(announcements);
 
+      if (mounted) {
         setState(() {
           _announcements = announcements;
           _isLoading = false;
