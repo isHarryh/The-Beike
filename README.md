@@ -1,27 +1,27 @@
-# 
-
-
-
 <!-- 欢迎阅读 The-Beike 说明文档 -->
 <!-- 仓库：https://github.com/isHarryh/The-Beike -->
 
 <!--suppress HtmlDeprecatedAttribute -->
 <div align="center" style="text-align:center">
-    <h1> The-Beike </h1>
-    <p>
-        The Integrated Campus Assistant for USTB
-        <br>
-        大贝壳：北京科技大学校园助手
-    </p>
-    <p>
-        <img alt="GitHub Top Language" src="https://img.shields.io/github/languages/top/isHarryh/The-Beike?label=Dart">
-        <img alt="GitHub License" src="https://img.shields.io/github/license/isHarryh/The-Beike?label=License">
-        <img alt="GitHub Release" src="https://img.shields.io/github/v/release/isHarryh/The-Beike?label=Release">
-        <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/isHarryh/The-Beike/build.yml?label=Build">
-    </p>
-    <sub>
-        <i> This project only supports Chinese docs. If you are an English user, feel free to contact us. </i>
-    </sub>
+   <h1> The-Beike </h1>
+   <img alt="The-Beike icon" width="64" src="https://raw.githubusercontent.com/isHarryh/The-Beike/main/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png">
+   <p>The Integrated Campus Assistant for USTB | 大贝壳：北京科技大学校园助手 (The-Beike)</p>
+   <p>
+      <img alt="GitHub Latest Release" src="https://img.shields.io/github/v/release/isHarryh/The-Beike?display_name=tag&label=Release&sort=semver&include_prereleases">
+      <img alt="GitHub Stars" src="https://img.shields.io/github/stars/isHarryh/The-Beike?label=Stars">
+   </p>
+   <hr>
+   <p>
+      <img alt="GitHub Top Language" src="https://img.shields.io/github/languages/top/isHarryh/The-Beike?label=Dart">
+      <img alt="GitHub License" src="https://img.shields.io/github/license/isHarryh/The-Beike?label=License">
+      <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/isHarryh/The-Beike/build.yml?label=Build">
+   </p>
+   <p>
+      <a href="https://thebeike.cn?from=readme">🔗官方网站 | Official Website</a>
+   </p>
+   <sub>
+      <i> This project only supports Chinese docs. If you are an English user, feel free to contact us. </i>
+   </sub>
 </div>
 
 ## 介 绍 <sub>Intro</sub>
@@ -41,10 +41,10 @@
 | :-----: | :-----: | :---: | :-----: | :-----: |
 |  ✅支持  |  ✅支持  | ✅支持 | ❌不支持 | ⏰计划中 |
 
-### 相关文档
+### 常用文档
 
-- 门户网站 > [点击访问](https://thebeike.cn)
-- 更新日志 > [点击查看](CHANGELOG.md)
+- **门户网站** > [点击访问](https://thebeike.cn)
+- **更新日志** > [点击查看](CHANGELOG.md)
 
 ## 使用方法 <sub>Usage</sub>
 
@@ -58,8 +58,8 @@
 ### 开发环境准备
 
 1. 安装 [Git](https://git-scm.com/install/) 和 [VS Code](https://code.visualstudio.com/download)；
-3. 安装 VS Code 的 [Flutter 插件](https://marketplace.visualstudio.com/items?itemName=Dart-Code.flutter)；
 2. 参考[《Flutter 快速开始》](https://docs.flutter.dev/install/quick)文档来安装 Flutter SDK；
+3. 安装 VS Code 的 [Flutter 插件](https://marketplace.visualstudio.com/items?itemName=Dart-Code.flutter)；
 4. 使用 Git 克隆本仓库到本地；
 5. 在项目文件夹中运行 `flutter pub get` 来下载依赖。
 
@@ -73,7 +73,7 @@
 > 如需在 Android 模拟器上调试，需配置 Android 相关开发环境并使用 ADB 事先连接模拟器端口。如遇设备连接问题，可以运行命令 `flutter doctor` 来执行故障排除。
 
 > [!TIP]
-> 
+>
 > 在调试过程中，修改代码后手动保存或在调试工具栏单击“⚡热重载”按钮，即可在不重启程序的情况下预览代码更改。但发生未捕获的错误时，无法热重载，需重启程序。
 
 ### 构建与打包
@@ -116,19 +116,23 @@
 
 ## 关 于 <sub>About</sub>
 
-### 参与贡献
-
-欢迎任何形式的贡献！如果你有任何想法或建议，或者发现了任何问题，请随时在 GitHub 上提交 Issue 或 Pull Request。
-
 ### 许可证
 
 本项目基于 **GPL3协议**。任何人都可以自由地使用和修改项目内的源代码，前提是要在源代码或版权声明中保留作者说明和原有协议，且使用相同的许可证进行开源。
 
+### 参与贡献
+
+欢迎任何形式的贡献！如果你有任何想法或建议，或者发现了任何问题，请随时在 GitHub 上提交 Issue 或 Pull Request。
+
 -----
 
 <div align="center">
-    <p><i>GitHub 历史星标图</i></p>
-    <a href="https://starchart.cc/isHarryh/The-Beike">
-       <img alt="Stars Chart" src="https://starchart.cc/isHarryh/The-Beike.svg?variant=adaptive">
-    </a>
+   <p><i>GitHub Star History</i></p>
+   <picture>
+      <!--suppress HtmlUnknownTarget -->
+      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=isHarryh/The-Beike&type=date&theme=dark&legend=top-left&sealed_token=nDQMtXKD3RsT0uVgzwcqDrSUnSl0FKBjccIeKhlZ6y3rafo5wsjtSiTTEVI89YOyPZ_CxZ1TD2Ll5akaXRyY_R9vttBYMWoXASpyhqK675g0QQOHsxTgAw" />
+      <!--suppress HtmlUnknownTarget -->
+      <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=isHarryh/The-Beike&type=date&legend=top-left&sealed_token=nDQMtXKD3RsT0uVgzwcqDrSUnSl0FKBjccIeKhlZ6y3rafo5wsjtSiTTEVI89YOyPZ_CxZ1TD2Ll5akaXRyY_R9vttBYMWoXASpyhqK675g0QQOHsxTgAw" />
+      <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=isHarryh/The-Beike&type=date&legend=top-left&sealed_token=nDQMtXKD3RsT0uVgzwcqDrSUnSl0FKBjccIeKhlZ6y3rafo5wsjtSiTTEVI89YOyPZ_CxZ1TD2Ll5akaXRyY_R9vttBYMWoXASpyhqK675g0QQOHsxTgAw" />
+   </picture>
 </div>
