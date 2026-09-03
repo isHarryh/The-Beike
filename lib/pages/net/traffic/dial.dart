@@ -462,7 +462,7 @@ class _NetDialDrawerState extends State<NetDialDrawer> {
             ],
           ),
         ),
-        if (trailing != null) trailing,
+        ?trailing,
       ],
     );
   }

@@ -228,7 +228,7 @@ class _NetDeviceShowDialogState extends State<NetDeviceShowDialog> {
                             ),
                           ),
                     ),
-                    if (trailing != null) trailing,
+                    ?trailing,
                   ],
                 ),
               ],

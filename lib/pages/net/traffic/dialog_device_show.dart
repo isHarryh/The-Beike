@@ -56,14 +56,14 @@ class NetOnlineDeviceShowDialog extends StatelessWidget {
     if (minutes >= 60 * 24) {
       final days = minutes ~/ (60 * 24);
       final hours = (minutes % (60 * 24)) ~/ 60;
-      return '${days}天${hours}小时';
+      return '$days天$hours小时';
     }
     if (minutes >= 60) {
       final hours = minutes ~/ 60;
       final leftMinutes = minutes % 60;
-      return '${hours}小时${leftMinutes}分钟';
+      return '$hours小时$leftMinutes分钟';
     }
-    return '${minutes}分钟';
+    return '$minutes分钟';
   }
 
   String _formatFlow(double mb) {
@@ -199,7 +199,7 @@ class NetOnlineDeviceShowDialog extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (trailing != null) trailing,
+                    ?trailing,
                   ],
                 ),
               ],
