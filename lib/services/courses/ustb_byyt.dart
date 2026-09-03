@@ -199,9 +199,7 @@ class UstbByytService extends BaseCoursesService {
       throw CourseServiceNetworkError('Failed to to get user info', e);
     }
 
-    CourseServiceException.raiseForStatus(response.statusCode!, () {
-      setError();
-    });
+    CourseServiceException.raiseForStatus(response.statusCode!, setOffline);
 
     try {
       return UserInfoUstbByytExtension.parse(response.data);
@@ -238,7 +236,7 @@ class UstbByytService extends BaseCoursesService {
       throw CourseServiceNetworkError('Failed to get grades', e);
     }
 
-    CourseServiceException.raiseForStatus(response.statusCode!, setError);
+    CourseServiceException.raiseForStatus(response.statusCode!, setOffline);
 
     try {
       final data = response.data;
@@ -295,7 +293,7 @@ class UstbByytService extends BaseCoursesService {
       throw CourseServiceNetworkError('Failed to get exams', e);
     }
 
-    CourseServiceException.raiseForStatus(response.statusCode!, setError);
+    CourseServiceException.raiseForStatus(response.statusCode!, setOffline);
 
     try {
       final data = response.data;
@@ -345,7 +343,7 @@ class UstbByytService extends BaseCoursesService {
       throw CourseServiceNetworkError('Failed to get curriculum', e);
     }
 
-    CourseServiceException.raiseForStatus(response.statusCode!, setError);
+    CourseServiceException.raiseForStatus(response.statusCode!, setOffline);
 
     try {
       final data = response.data;
@@ -413,7 +411,7 @@ class UstbByytService extends BaseCoursesService {
       throw CourseServiceNetworkError('Failed to get course periods', e);
     }
 
-    CourseServiceException.raiseForStatus(response.statusCode!, setError);
+    CourseServiceException.raiseForStatus(response.statusCode!, setOffline);
 
     try {
       final data = response.data;
@@ -464,7 +462,7 @@ class UstbByytService extends BaseCoursesService {
       );
     }
 
-    CourseServiceException.raiseForStatus(response.statusCode!, setError);
+    CourseServiceException.raiseForStatus(response.statusCode!, setOffline);
 
     try {
       final data = response.data;
@@ -507,7 +505,7 @@ class UstbByytService extends BaseCoursesService {
       throw CourseServiceNetworkError('Failed to get selected courses', e);
     }
 
-    CourseServiceException.raiseForStatus(response.statusCode!, setError);
+    CourseServiceException.raiseForStatus(response.statusCode!, setOffline);
 
     try {
       final data = response.data;
@@ -568,7 +566,7 @@ class UstbByytService extends BaseCoursesService {
       throw CourseServiceNetworkError('Failed to get selectable courses', e);
     }
 
-    CourseServiceException.raiseForStatus(response.statusCode!, setError);
+    CourseServiceException.raiseForStatus(response.statusCode!, setOffline);
 
     try {
       final data = response.data;
@@ -642,7 +640,7 @@ class UstbByytService extends BaseCoursesService {
       throw CourseServiceNetworkError('Failed to get course tabs', e);
     }
 
-    CourseServiceException.raiseForStatus(response.statusCode!, setError);
+    CourseServiceException.raiseForStatus(response.statusCode!, setOffline);
 
     try {
       final data = response.data;
@@ -678,7 +676,7 @@ class UstbByytService extends BaseCoursesService {
       throw CourseServiceNetworkError('Failed to get terms', e);
     }
 
-    CourseServiceException.raiseForStatus(response.statusCode!, setError);
+    CourseServiceException.raiseForStatus(response.statusCode!, setOffline);
 
     try {
       final data = response.data;
@@ -734,7 +732,7 @@ class UstbByytService extends BaseCoursesService {
       throw CourseServiceNetworkError('Failed to get course detail', e);
     }
 
-    CourseServiceException.raiseForStatus(response.statusCode!, setError);
+    CourseServiceException.raiseForStatus(response.statusCode!, setOffline);
 
     try {
       final data = response.data;
@@ -809,7 +807,7 @@ class UstbByytService extends BaseCoursesService {
       );
     }
 
-    CourseServiceException.raiseForStatus(response.statusCode!, setError);
+    CourseServiceException.raiseForStatus(response.statusCode!, setOffline);
 
     try {
       final data = response.data;
@@ -860,7 +858,7 @@ class UstbByytService extends BaseCoursesService {
       );
     }
 
-    CourseServiceException.raiseForStatus(response.statusCode!, setError);
+    CourseServiceException.raiseForStatus(response.statusCode!, setOffline);
 
     try {
       final data = response.data;

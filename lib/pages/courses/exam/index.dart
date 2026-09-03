@@ -47,13 +47,7 @@ class _ExamPageState extends State<ExamPage> {
   Future<void> _loadExams({bool forceRefresh = false}) async {
     final service = _serviceProvider.coursesService;
 
-    if (!forceRefresh && mounted && _allExams != null) {
-      setState(() {
-        _allExams = null;
-        _filteredExams = null;
-        _errorMessage = null;
-        _isLoading = false;
-      });
+    if (!forceRefresh && _allExams != null) {
       return;
     }
 

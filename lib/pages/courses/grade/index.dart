@@ -267,7 +267,9 @@ class _GradePageState extends State<GradePage> {
     }
 
     final averageScore = totalScore / selectedGrades.length;
-    final weightedScore = totalWeightedScore / totalCredits;
+    final weightedScore = totalCredits > 0
+        ? totalWeightedScore / totalCredits
+        : 0.0;
 
     _showCalculationDialog(
       title: '快捷计算',

@@ -185,7 +185,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
             const SizedBox(height: 16),
-            _buildServiceUrlConfig(
+            _ServiceUrlField(
               label: '教务服务',
               defaultValue: _serviceProvider.coursesService.defaultBaseUrl,
               currentValue: _serviceProvider.coursesService.baseUrl,
@@ -195,7 +195,7 @@ class _SettingsPageState extends State<SettingsPage> {
               },
             ),
             const SizedBox(height: 16),
-            _buildServiceUrlConfig(
+            _ServiceUrlField(
               label: '校园网管理服务',
               defaultValue: _serviceProvider.netService.defaultBaseUrl,
               currentValue: _serviceProvider.netService.baseUrl,
@@ -205,7 +205,7 @@ class _SettingsPageState extends State<SettingsPage> {
               },
             ),
             const SizedBox(height: 16),
-            _buildServiceUrlConfig(
+            _ServiceUrlField(
               label: '同步服务',
               defaultValue: _serviceProvider.syncService.defaultBaseUrl,
               currentValue: _serviceProvider.syncService.baseUrl,
@@ -217,50 +217,6 @@ class _SettingsPageState extends State<SettingsPage> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildServiceUrlConfig({
-    required String label,
-    required String defaultValue,
-    required String currentValue,
-    required ValueChanged<String> onChanged,
-  }) {
-    final controller = TextEditingController(text: currentValue);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: Theme.of(context).textTheme.bodyLarge),
-        const SizedBox(height: 4),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: controller,
-                decoration: InputDecoration(border: const OutlineInputBorder()),
-                onSubmitted: (value) {
-                  final newUrl = value.trim().isEmpty
-                      ? defaultValue
-                      : value.trim();
-                  onChanged(newUrl);
-                  setState(() {});
-                },
-              ),
-            ),
-            const SizedBox(width: 8),
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              tooltip: '恢复默认',
-              onPressed: () {
-                controller.clear();
-                onChanged(defaultValue);
-                setState(() {});
-              },
-            ),
-          ],
-        ),
-      ],
     );
   }
 
@@ -368,5 +324,74 @@ class _SettingsPageState extends State<SettingsPage> {
       case ThemeMode.dark:
         return ThemeMode.system;
     }
+  }
+}
+
+class _ServiceUrlField extends StatefulWidget {
+  final String label;
+  final String defaultValue;
+  final String currentValue;
+  final ValueChanged<String> onChanged;
+
+  const _ServiceUrlField({
+    required this.label,
+    required this.defaultValue,
+    required this.currentValue,
+    required this.onChanged,
+  });
+
+  @override
+  State<_ServiceUrlField> createState() => _ServiceUrlFieldState();
+}
+
+class _ServiceUrlFieldState extends State<_ServiceUrlField> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.currentValue);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(widget.label, style: Theme.of(context).textTheme.bodyLarge),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _controller,
+                decoration: const InputDecoration(border: OutlineInputBorder()),
+                onSubmitted: (value) {
+                  final newUrl = value.trim().isEmpty
+                      ? widget.defaultValue
+                      : value.trim();
+                  widget.onChanged(newUrl);
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: '恢复默认',
+              onPressed: () {
+                _controller.clear();
+                widget.onChanged(widget.defaultValue);
+              },
+            ),
+          ],
+        ),
+      ],
+    );
   }
 }

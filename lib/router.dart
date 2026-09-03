@@ -202,8 +202,14 @@ class _MainLayoutState extends State<MainLayout> {
   void _navigateToPage(String path) {
     if (context.mounted && _currentPath != path) {
       if (_isWideScreen) {
-        context.router.replacePath('/');
-        context.router.pushPath(path);
+        // Reset the stack to root, then push the target page on top of it.
+        final router = context.router;
+        while (router.stack.length > 1) {
+          router.pop();
+        }
+        if (path != '/') {
+          router.pushPath(path);
+        }
       } else {
         context.router.pushPath(path);
         Navigator.pop(context);

@@ -158,7 +158,7 @@ class GeneralStoreService extends BaseStoreService {
 
       memory.clear();
     } catch (e) {
-      if (kDebugMode) ('Failed to remove all: $e');
+      if (kDebugMode) print('Failed to remove all: $e');
     }
   }
 

@@ -98,16 +98,10 @@ class DrcomNetService extends BaseNetService {
 
   @override
   Future<void> doLogout() async {
-    final response = await _dio.get(
+    await _dio.get(
       '/Self/login/logout',
       options: Options(responseType: ResponseType.plain),
     );
-    // Expect 302 redirect to /Self/
-    if (response.statusCode! >= 400) {
-      if (kDebugMode) {
-        print('Net service logout failed: ${response.statusCode}');
-      }
-    }
     await _cookieJar.deleteAll();
   }
 

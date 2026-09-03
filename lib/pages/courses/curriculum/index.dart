@@ -435,7 +435,11 @@ class _CurriculumPageState extends State<CurriculumPage>
 
   Future<void> _refreshCurriculumData() async {
     _serviceProvider.storeService.delConfig("curriculum_data");
-    await _loadCurriculumFromCacheOrService();
+    final cachedTerm = _curriculumData?.currentTerm ?? TermInfo.autoDetect();
+    setState(() {
+      _curriculumData = null;
+    });
+    await _loadCurriculumForTerm(cachedTerm);
   }
 
   Future<void> _clearCacheAndSelectTerm() async {

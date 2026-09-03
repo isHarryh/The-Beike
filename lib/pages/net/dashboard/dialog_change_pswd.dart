@@ -93,11 +93,7 @@ class _NetChangePasswordDialogState extends State<NetChangePasswordDialog> {
     try {
       // Logout and update cached credentials
       if (mounted) {
-        try {
-          await _serviceProvider.netService.logout();
-        } catch (e) {
-          if (mounted) {}
-        }
+        await _serviceProvider.netService.logout();
 
         final cachedData = _serviceProvider.storeService
             .getConfig<NetUserIntegratedData>(
