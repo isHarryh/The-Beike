@@ -129,10 +129,6 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
     );
   }
 
-  Widget _buildWelcomeMessage() {
-    return SizedBox(height: 8); // Preserved
-  }
-
   Widget _buildContent() {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -165,7 +161,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
       );
     }
 
-    if (_announcements == null || _announcements!.isEmpty) {
+    if (_announcements!.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -178,40 +174,34 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
       );
     }
 
-    return Column(
-      children: [
-        _buildWelcomeMessage(),
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: _announcements!.length,
-            itemBuilder: (context, index) {
-              final announcement = _announcements![index];
-              final isExpanded = _expandedIndex == index;
-              final key = announcement.calculateKey();
-              final isUnread = _unreadKeys.contains(key);
+    return Expanded(
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _announcements!.length,
+        itemBuilder: (context, index) {
+          final announcement = _announcements![index];
+          final isExpanded = _expandedIndex == index;
+          final key = announcement.calculateKey();
+          final isUnread = _unreadKeys.contains(key);
 
-              return _AnnouncementCard(
-                announcement: announcement,
-                isExpanded: isExpanded,
-                isUnread: isUnread,
-                onExpandChanged: (expanded) {
-                  setState(() {
-                    if (expanded) {
-                      _expandedIndex = index;
-                      _markReadStatus(announcement, true);
-                    } else if (_expandedIndex == index) {
-                      _expandedIndex = null;
-                    }
-                  });
-                },
-                onMarkReadStatus: (isRead) =>
-                    _markReadStatus(announcement, isRead),
-              );
+          return _AnnouncementCard(
+            announcement: announcement,
+            isExpanded: isExpanded,
+            isUnread: isUnread,
+            onExpandChanged: (expanded) {
+              setState(() {
+                if (expanded) {
+                  _expandedIndex = index;
+                  _markReadStatus(announcement, true);
+                } else if (_expandedIndex == index) {
+                  _expandedIndex = null;
+                }
+              });
             },
-          ),
-        ),
-      ],
+            onMarkReadStatus: (isRead) => _markReadStatus(announcement, isRead),
+          );
+        },
+      ),
     );
   }
 }
@@ -220,8 +210,8 @@ class _AnnouncementCard extends StatefulWidget {
   final Announcement announcement;
   final bool isExpanded;
   final bool isUnread;
-  final Function(bool) onExpandChanged;
-  final Function(bool) onMarkReadStatus;
+  final ValueChanged<bool> onExpandChanged;
+  final ValueChanged<bool> onMarkReadStatus;
 
   const _AnnouncementCard({
     required this.announcement,

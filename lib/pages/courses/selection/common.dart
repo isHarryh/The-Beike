@@ -69,17 +69,6 @@ Future<bool?> alertClearSelectedWarning(BuildContext context) {
   return alertWarning(context, '您真的要清除备选课程列表吗？', '');
 }
 
-Future<bool?> alertDeselectCourseWarning(
-  BuildContext context,
-  String courseName,
-) {
-  return alertWarning(
-    context,
-    '您真的要退选课程“$courseName”吗？',
-    '退选后，您可能无法再次选入该课程（特别是在讲台已满的情况下）。',
-  );
-}
-
 class CourseDeselectionDialog extends StatefulWidget {
   final TermInfo termInfo;
   final CourseInfo course;

@@ -29,8 +29,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage>
-    with PageStateMixin, LoadingStateMixin {
+class _HomePageState extends State<HomePage> with PageStateMixin {
   UserInfo? _userInfo;
 
   ClassItem? _ongoingClass;

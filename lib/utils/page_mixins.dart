@@ -67,29 +67,4 @@ mixin LoadingStateMixin<T extends StatefulWidget> on State<T> {
       });
     }
   }
-
-  Widget buildLoadingIndicator() {
-    return const Center(child: CircularProgressIndicator());
-  }
-
-  Widget buildErrorWidget({VoidCallback? onRetry}) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
-          const SizedBox(height: 16),
-          Text(
-            _errorMessage ?? '未知错误',
-            style: TextStyle(color: Colors.grey[600], fontSize: 16),
-            textAlign: TextAlign.center,
-          ),
-          if (onRetry != null) ...[
-            const SizedBox(height: 16),
-            ElevatedButton(onPressed: onRetry, child: const Text('重试')),
-          ],
-        ],
-      ),
-    );
-  }
 }

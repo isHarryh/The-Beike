@@ -8,15 +8,6 @@ import '/utils/sync_embeded.dart';
 import 'common.dart';
 import 'table.dart';
 
-class MajorPeriodInfo {
-  final int id;
-  final String name;
-  final String startTime;
-  final String endTime;
-
-  MajorPeriodInfo(this.id, this.name, this.startTime, this.endTime);
-}
-
 class CurriculumPage extends StatefulWidget {
   const CurriculumPage({super.key});
 

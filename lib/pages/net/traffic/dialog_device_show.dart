@@ -34,12 +34,6 @@ class NetOnlineDeviceShowDialog extends StatelessWidget {
       }
     }
 
-    for (final candidate in sessions) {
-      if (candidate.mac.toUpperCase() == session.mac.toUpperCase()) {
-        return candidate;
-      }
-    }
-
     return session;
   }
 

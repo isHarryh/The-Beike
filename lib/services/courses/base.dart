@@ -29,9 +29,6 @@ abstract class BaseCoursesService extends ChangeNotifier with BaseService {
   Future<void> logout() async {
     await runLogout(() async {
       stopHeartbeat();
-      if (kDebugMode) {
-        print('Courses service logout called at base class');
-      }
       await doLogout();
     });
   }

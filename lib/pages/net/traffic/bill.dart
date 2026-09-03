@@ -359,16 +359,6 @@ class _NetMonthlyBillSectionState extends State<NetMonthlyBillSection> {
   }
 
   _ChartConfig _calculateChartConfig(Map<int, double> monthlyData) {
-    if (monthlyData.isEmpty) {
-      return _ChartConfig(
-        unitDivisor: 1,
-        unitSuffix: 'MB',
-        decimalPlaces: 0,
-        interval: 100,
-        maxY: 1000,
-      );
-    }
-
     final maxValue = monthlyData.values.reduce((a, b) => a > b ? a : b);
 
     if (maxValue >= 1024) {

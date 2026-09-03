@@ -11,6 +11,14 @@ import 'dialog_device_show.dart';
 import 'bill.dart';
 import 'dial.dart';
 
+String _buildSessionKey(NetOnlineSession session) {
+  final sessionId = session.sessionId?.trim();
+  if (sessionId != null && sessionId.isNotEmpty) {
+    return sessionId;
+  }
+  return '${session.mac.toUpperCase()}_${session.ip}';
+}
+
 class NetTrafficPage extends StatefulWidget {
   const NetTrafficPage({super.key});
 
@@ -188,14 +196,6 @@ class _NetTrafficPageState extends State<NetTrafficPage>
     _trackedSessionById.clear();
     _sessionTrafficActiveById.clear();
     _realtimeTrafficHistory.clear();
-  }
-
-  String _buildSessionKey(NetOnlineSession session) {
-    final sessionId = session.sessionId?.trim();
-    if (sessionId != null && sessionId.isNotEmpty) {
-      return sessionId;
-    }
-    return '${session.mac.toUpperCase()}_${session.ip}';
   }
 
   void _updateRealtimeTrafficData(List<NetOnlineSession> sessions) {
@@ -420,14 +420,6 @@ class NetOnlineSessionSection extends StatelessWidget {
     required this.sessionTrafficActiveById,
     required this.isLoading,
   });
-
-  String _buildSessionKey(NetOnlineSession session) {
-    final sessionId = session.sessionId?.trim();
-    if (sessionId != null && sessionId.isNotEmpty) {
-      return sessionId;
-    }
-    return '${session.mac.toUpperCase()}_${session.ip}';
-  }
 
   Widget _buildOnlineSessionListTile(
     ThemeData theme,

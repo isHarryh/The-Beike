@@ -90,7 +90,7 @@ class _UpdatePageState extends State<UpdatePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PageAppBar(title: '版本更新', actions: const []),
+      appBar: const PageAppBar(title: '版本更新'),
       body: RefreshIndicator(
         onRefresh: _checkUpdate,
         child: SingleChildScrollView(
@@ -181,10 +181,9 @@ class _UpdatePageState extends State<UpdatePage> {
 
     final currentPlatform = MetaInfo.instance.platformName.toLowerCase();
     final downloads = _releaseInfo!.stableDownloads;
-    final currentEntry = downloads.entries.firstWhere(
-      (e) => e.key.toLowerCase() == currentPlatform,
-      orElse: () => downloads.entries.first,
-    );
+    final currentEntry = downloads.entries
+        .where((e) => e.key.toLowerCase() == currentPlatform)
+        .firstOrNull;
     final otherPlatforms = downloads.entries
         .where((e) => e.key.toLowerCase() != currentPlatform)
         .toList();
@@ -205,11 +204,12 @@ class _UpdatePageState extends State<UpdatePage> {
           ],
         ),
         const SizedBox(height: 12),
-        _PlatformDownloadsCard(
-          title: _releaseInfo!.getDisplayPlatformName(currentEntry.key),
-          sources: currentEntry.value,
-          releaseInfo: _releaseInfo!,
-        ),
+        if (currentEntry != null)
+          _PlatformDownloadsCard(
+            title: _releaseInfo!.getDisplayPlatformName(currentEntry.key),
+            sources: currentEntry.value,
+            releaseInfo: _releaseInfo!,
+          ),
         if (otherPlatforms.isNotEmpty)
           Card(
             margin: const EdgeInsets.only(top: 12),

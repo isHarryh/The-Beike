@@ -8,14 +8,22 @@ class NetAddDeviceDialog extends StatefulWidget {
 }
 
 class _NetAddDeviceDialogState extends State<NetAddDeviceDialog> {
-  final macController = TextEditingController();
-  final nameController = TextEditingController(text: '我的设备');
+  final _macController = TextEditingController();
+  final _nameController = TextEditingController(text: '我的设备');
 
   @override
   void dispose() {
-    macController.dispose();
-    nameController.dispose();
+    _macController.dispose();
+    _nameController.dispose();
     super.dispose();
+  }
+
+  void _submit() {
+    final mac = _macController.text.trim();
+    final name = _nameController.text.trim();
+    if (mac.isNotEmpty) {
+      Navigator.of(context).pop({'mac': mac, 'name': name});
+    }
   }
 
   @override
@@ -31,7 +39,7 @@ class _NetAddDeviceDialogState extends State<NetAddDeviceDialog> {
             Text('请输入设备的物理地址（MAC 地址）和设备名称。', style: theme.textTheme.bodySmall),
             const SizedBox(height: 16),
             TextField(
-              controller: macController,
+              controller: _macController,
               decoration: const InputDecoration(
                 labelText: 'MAC 地址',
                 hintText: '例如: A1B2C3D4E5F6',
@@ -41,19 +49,13 @@ class _NetAddDeviceDialogState extends State<NetAddDeviceDialog> {
             ),
             const SizedBox(height: 12),
             TextField(
-              controller: nameController,
+              controller: _nameController,
               decoration: const InputDecoration(
                 labelText: '设备名称',
                 hintText: '（可选）',
               ),
               textInputAction: TextInputAction.done,
-              onSubmitted: (_) {
-                final mac = macController.text.trim();
-                final name = nameController.text.trim();
-                if (mac.isNotEmpty) {
-                  Navigator.of(context).pop({'mac': mac, 'name': name});
-                }
-              },
+              onSubmitted: (_) => _submit(),
             ),
           ],
         ),
@@ -63,16 +65,7 @@ class _NetAddDeviceDialogState extends State<NetAddDeviceDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('取消'),
         ),
-        FilledButton(
-          onPressed: () {
-            final mac = macController.text.trim();
-            final name = nameController.text.trim();
-            if (mac.isNotEmpty) {
-              Navigator.of(context).pop({'mac': mac, 'name': name});
-            }
-          },
-          child: const Text('添加'),
-        ),
+        FilledButton(onPressed: _submit, child: const Text('添加')),
       ],
     );
   }
