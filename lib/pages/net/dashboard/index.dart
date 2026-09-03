@@ -726,6 +726,7 @@ class _NetDashboardPageState extends State<NetDashboardPage>
       return Material(
         color: Colors.transparent,
         child: InkWell(
+          mouseCursor: WidgetStateMouseCursor.clickable,
           onTap: onPressed,
           borderRadius: BorderRadius.circular(8),
           child: container,

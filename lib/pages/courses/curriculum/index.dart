@@ -518,6 +518,7 @@ class _CurriculumPageState extends State<CurriculumPage>
                   final isTodayWeek = week == todayWeek;
 
                   return FilterChip(
+                    mouseCursor: WidgetStateMouseCursor.clickable,
                     label: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [

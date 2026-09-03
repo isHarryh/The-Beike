@@ -340,6 +340,7 @@ class _AnnouncementCardState extends State<_AnnouncementCard>
             // Header with title and expand button
             InkWell(
               borderRadius: BorderRadius.circular(8),
+              mouseCursor: WidgetStateMouseCursor.clickable,
               onTap: () => widget.onExpandChanged(!widget.isExpanded),
               child: Padding(
                 padding: const EdgeInsets.all(16),

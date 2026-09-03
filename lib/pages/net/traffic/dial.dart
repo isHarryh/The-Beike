@@ -305,6 +305,7 @@ class _NetDialDrawerState extends State<NetDialDrawer> {
             ),
             const SizedBox(height: 16),
             InkWell(
+              mouseCursor: WidgetStateMouseCursor.clickable,
               onTap: () => setState(() => _isExpanded = !_isExpanded),
               borderRadius: BorderRadius.circular(16),
               child: Padding(

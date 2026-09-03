@@ -566,6 +566,7 @@ class _CourseDetailCardState extends State<CourseDetailCard>
                 color: Colors.transparent,
                 child: InkWell(
                   borderRadius: BorderRadius.circular(8),
+                  mouseCursor: WidgetStateMouseCursor.clickable,
                   onTap: () async {
                     await _handleCourseSelection(
                       courseDetail,
@@ -851,6 +852,7 @@ class _CourseDetailCardState extends State<CourseDetailCard>
         if (hasMore) ...[
           const SizedBox(height: 8),
           InkWell(
+            mouseCursor: WidgetStateMouseCursor.clickable,
             onTap: onToggle,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -1061,6 +1063,7 @@ class _CourseDetailCardState extends State<CourseDetailCard>
                     color: Colors.transparent,
                     child: InkWell(
                       borderRadius: BorderRadius.circular(8),
+                      mouseCursor: WidgetStateMouseCursor.clickable,
                       onTap: () async {
                         await _handleCourseDeselection(courseDetail, detail);
                       },

@@ -257,6 +257,7 @@ class _NetLoginDialogState extends State<NetLoginDialog> {
                         )
                       else if (_extraCodeImage != null)
                         InkWell(
+                          mouseCursor: WidgetStateMouseCursor.clickable,
                           onTap: _loadExtraCodeImage,
                           child: Image.memory(
                             _extraCodeImage!,

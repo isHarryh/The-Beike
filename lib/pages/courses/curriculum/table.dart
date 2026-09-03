@@ -355,6 +355,7 @@ class CurriculumTable extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
+        mouseCursor: WidgetStateMouseCursor.clickable,
         onTap: () => _showClassDetails(context, firstClass),
         splashColor: Theme.of(
           context,

@@ -630,6 +630,7 @@ class _GradePageState extends State<GradePage> {
             final grade = entry.value;
 
             return InkWell(
+              mouseCursor: WidgetStateMouseCursor.clickable,
               onTap: () {
                 // Do nothing
               },

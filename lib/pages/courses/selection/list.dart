@@ -665,6 +665,7 @@ class _CourseListPageState extends State<CourseListPage>
                       return Container(
                         margin: const EdgeInsets.only(right: 8),
                         child: FilterChip(
+                          mouseCursor: WidgetStateMouseCursor.clickable,
                           selected: isSelected,
                           label: Text(
                             tab.tabName,
@@ -896,6 +897,7 @@ class _CourseListPageState extends State<CourseListPage>
             borderRadius: BorderRadius.circular(28),
             child: InkWell(
               borderRadius: BorderRadius.circular(28),
+              mouseCursor: WidgetStateMouseCursor.clickable,
               onTap: () async {
                 // Pop dialog to confirm to clear
                 if (await alertClearSelectedWarning(context) == true) {
@@ -941,6 +943,7 @@ class _CourseListPageState extends State<CourseListPage>
               borderRadius: BorderRadius.circular(28),
               child: InkWell(
                 borderRadius: BorderRadius.circular(28),
+                mouseCursor: WidgetStateMouseCursor.clickable,
                 onTap: () async {
                   await Navigator.push(
                     context,
@@ -1190,6 +1193,7 @@ class _CourseTableRowState extends State<_CourseTableRow>
     return Column(
       children: [
         InkWell(
+          mouseCursor: WidgetStateMouseCursor.clickable,
           onTap: isToggleDisabled ? null : widget.onToggle,
           splashColor: Theme.of(
             context,

@@ -946,6 +946,7 @@ class _SyncPairingCardState extends State<SyncPairingCard> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
+          mouseCursor: WidgetStateMouseCursor.clickable,
           onTap: _openPairing,
           borderRadius: BorderRadius.circular(20),
           child: Padding(

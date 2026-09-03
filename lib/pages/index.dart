@@ -513,6 +513,7 @@ class _HomePageState extends State<HomePage>
       elevation: 2,
       margin: EdgeInsets.zero,
       child: InkWell(
+        mouseCursor: WidgetStateMouseCursor.clickable,
         onTap: () => context.router.pushPath('/courses/curriculum'),
         borderRadius: BorderRadius.circular(12),
         child: Container(
@@ -721,6 +722,7 @@ class _HomePageState extends State<HomePage>
       elevation: 2,
       margin: EdgeInsets.zero,
       child: InkWell(
+        mouseCursor: WidgetStateMouseCursor.clickable,
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
@@ -841,6 +843,7 @@ class _HomePageState extends State<HomePage>
       elevation: 2,
       margin: EdgeInsets.zero,
       child: InkWell(
+        mouseCursor: WidgetStateMouseCursor.clickable,
         onTap: () => context.router.pushPath('/courses/account'),
         borderRadius: BorderRadius.circular(12),
         child: Padding(

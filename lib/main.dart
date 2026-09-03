@@ -71,26 +71,54 @@ class _MainState extends State<Main> {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'TheBeike',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color.fromRGBO(0, 91, 148, 1.0),
-          brightness: Brightness.light,
-          dynamicSchemeVariant: DynamicSchemeVariant.rainbow,
-        ),
-        fontFamily: 'SourceHanSansSC',
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color.fromRGBO(0, 91, 148, 1.0),
-          brightness: Brightness.dark,
-          dynamicSchemeVariant: DynamicSchemeVariant.rainbow,
-        ),
-        fontFamily: 'SourceHanSansSC',
-        useMaterial3: true,
-      ),
+      theme: _buildTheme(Brightness.light),
+      darkTheme: _buildTheme(Brightness.dark),
       themeMode: _themeMode,
       routerConfig: AppRouter.router.config(),
+    );
+  }
+
+  /// Builds the app theme.
+  ThemeData _buildTheme(Brightness brightness) {
+    final ThemeData base = ThemeData(
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: const Color.fromRGBO(0, 91, 148, 1.0),
+        brightness: brightness,
+        dynamicSchemeVariant: DynamicSchemeVariant.rainbow,
+      ),
+      fontFamily: 'SourceHanSansSC',
+      useMaterial3: true,
+    );
+    // Flutter 3.41 changed the default mouse cursor of interactive widgets
+    // from the click (hand) cursor to the arrow cursor on desktop platforms.
+    // Restore the previous behavior for a consistent desktop experience.
+    const WidgetStateProperty<MouseCursor> clickableCursor =
+        WidgetStatePropertyAll(WidgetStateMouseCursor.clickable);
+    return base.copyWith(
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ButtonStyle(mouseCursor: clickableCursor),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: ButtonStyle(mouseCursor: clickableCursor),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: ButtonStyle(mouseCursor: clickableCursor),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: ButtonStyle(mouseCursor: clickableCursor),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: ButtonStyle(mouseCursor: clickableCursor),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        mouseCursor: clickableCursor,
+      ),
+      checkboxTheme: CheckboxThemeData(mouseCursor: clickableCursor),
+      switchTheme: SwitchThemeData(mouseCursor: clickableCursor),
+      sliderTheme: SliderThemeData(mouseCursor: clickableCursor),
+      radioTheme: RadioThemeData(mouseCursor: clickableCursor),
+      popupMenuTheme: PopupMenuThemeData(mouseCursor: clickableCursor),
+      listTileTheme: ListTileThemeData(mouseCursor: clickableCursor),
     );
   }
 }

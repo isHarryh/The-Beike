@@ -661,6 +661,7 @@ class _CourseSubmitPageState extends State<CourseSubmitPage>
         borderRadius: BorderRadius.circular(28),
         child: InkWell(
           borderRadius: BorderRadius.circular(28),
+          mouseCursor: WidgetStateMouseCursor.clickable,
           onTap: canStop
               ? _requestStopSubmission
               : canSubmit

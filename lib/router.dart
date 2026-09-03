@@ -475,6 +475,7 @@ class _SideNavigationState extends State<_SideNavigation> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
+          mouseCursor: WidgetStateMouseCursor.clickable,
           onTap: onTap,
           child: Container(
             decoration: BoxDecoration(
