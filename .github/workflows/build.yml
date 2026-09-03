@@ -18,7 +18,7 @@ permissions:
 
 env:
   APP_NAME: "TheBeike"
-  FLUTTER_VERSION: "3.38.10"
+  FLUTTER_VERSION: "3.44.9"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
