@@ -1,14 +1,15 @@
 ---
-name: Using Dio
+name: using-dio
 description: Guide for using `dio` the powerful Dart HTTP package. Use this when working on HTTP requests.
 ---
 
 This skill is adapt from the official `dio` documentation.
 
-- Last updated: May 2025
+- Last updated: Sept 2026
 - Source: https://github.com/cfug/dio/blob/main/dio/README.md
 
 > Appendix:
+>
 > 1. [ReferCookieManager](./ReferCookieManager.md): Guide for using `dio_cookie_manager` plugin.
 
 ## Examples
@@ -37,6 +38,15 @@ void request() async {
 
 ```dart
 response = await dio.post('/test', data: {'id': 12, 'name': 'dio'});
+```
+
+### Performing a `QUERY` request
+
+The `QUERY` method (RFC 10008) is safe and idempotent like `GET`, but allows a
+request body, which is useful for complex queries that do not fit in the URL.
+
+```dart
+response = await dio.query('/search', data: {'filter': {'name': 'dio'}});
 ```
 
 ### Downloading a file
@@ -183,6 +193,16 @@ Duration? sendTimeout;
 ///
 /// `null` or `Duration.zero` means no timeout limit.
 Duration? receiveTimeout;
+
+/// Timeout when transforming response data.
+///
+/// Throws the [DioException] with
+/// [DioExceptionType.transformTimeout] type when timed out.
+/// On web, timeout handling is best-effort because synchronous JavaScript
+/// work cannot be preempted.
+///
+/// `null` or `Duration.zero` means no timeout limit.
+Duration? transformTimeout;
 
 /// Custom field that you can retrieve it later in [Interceptor],
 /// [Transformer] and the [Response.requestOptions] object.
@@ -523,8 +543,6 @@ final formDataWithBoundaryName = FormData(
 
 > `FormData` is supported with the POST method typically.
 
-There is a complete example [here](../example_dart/lib/formdata.dart).
-
 #### Multiple files upload
 
 There are two ways to add multiple files to `FormData`,
@@ -563,8 +581,9 @@ formData.files.addAll([
 
 You should make a new `FormData` or `MultipartFile` every time in repeated requests.
 A typical wrong behavior is setting the `FormData` as a variable and using it in every request.
-It can be easy for the *Cannot finalize* exceptions to occur.
+It can be easy for the _Cannot finalize_ exceptions to occur.
 To avoid that, write your requests like the below code:
+
 ```dart
 Future<void> _repeatedlyRequest() async {
   Future<FormData> createFormData() async {
@@ -574,7 +593,7 @@ Future<void> _repeatedlyRequest() async {
       'file': await MultipartFile.fromFile('./text.txt',filename: 'upload.txt'),
     });
   }
-  
+
   await dio.post('some-url', data: await createFormData());
 }
 ```

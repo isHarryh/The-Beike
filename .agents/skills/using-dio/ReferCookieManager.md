@@ -2,7 +2,7 @@
 
 This article explains how to use the `dio_cookie_manager` plugin in Dio to manage cookies effectively.
 
-- Last updated: Aug 2025
+- Last updated: Sept 2026
 - Source: https://github.com/cfug/dio/blob/main/plugins/cookie_manager/README.md
 
 ## Usage
