@@ -286,21 +286,8 @@ class _SyncingCardState extends State<SyncingCard> {
     });
 
     try {
-      await widget.serviceProvider.syncAndApplyConfig();
-
       // Sync status is already recorded by the service
-      if (mounted) {
-        setState(() {
-          // Trigger rebuild to reflect the new sync status from service
-        });
-      }
-    } catch (e) {
-      // Sync status failure is already recorded by the service
-      if (mounted) {
-        setState(() {
-          // Trigger rebuild to reflect the new sync status from service
-        });
-      }
+      await widget.serviceProvider.syncAndApplyConfig();
     } finally {
       if (mounted) {
         setState(() {

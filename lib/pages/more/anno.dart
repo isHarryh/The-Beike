@@ -20,8 +20,8 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
   List<Announcement>? _announcements;
   String? _errorMessage;
   bool _isLoading = true;
-  int? _expandedIndex; // Track which announcement is expanded
-  Set<String> _unreadKeys = {}; // Track unread announcement keys
+  int? _expandedIndex;
+  Set<String> _unreadKeys = {};
 
   @override
   void initState() {
@@ -58,15 +58,17 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
     }
   }
 
-  Future<void> _processReadStatus(List<Announcement> announcements) async {
-    // Load current read map
-    final store = _serviceProvider.storeService;
-    var readMap =
-        store.getConfig<AnnouncementReadMap>(
+  AnnouncementReadMap _loadReadMap() {
+    return _serviceProvider.storeService.getConfig<AnnouncementReadMap>(
           'announcement_read',
           AnnouncementReadMap.fromJson,
         ) ??
         AnnouncementReadMap.defaultMap;
+  }
+
+  Future<void> _processReadStatus(List<Announcement> announcements) async {
+    final store = _serviceProvider.storeService;
+    final readMap = _loadReadMap();
 
     // Find unread announcements
     final currentKeys = announcements.map((a) => a.calculateKey()).toSet();
@@ -95,13 +97,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
   Future<void> _markReadStatus(Announcement announcement, bool isRead) async {
     final key = announcement.calculateKey();
     final store = _serviceProvider.storeService;
-
-    var readMap =
-        store.getConfig<AnnouncementReadMap>(
-          'announcement_read',
-          AnnouncementReadMap.fromJson,
-        ) ??
-        AnnouncementReadMap.defaultMap;
+    final readMap = _loadReadMap();
 
     if (isRead) {
       // Update read timestamp

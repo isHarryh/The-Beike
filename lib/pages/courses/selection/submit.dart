@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '/types/courses.dart';
 import '/utils/app_bar.dart';
 import '/services/provider.dart';
+import '/services/courses/exceptions.dart';
 import 'common.dart';
 
 enum CourseSelectionStatus {
@@ -168,7 +169,6 @@ class _CourseSubmitPageState extends State<CourseSubmitPage>
   List<CourseSelectionTask> _tasks = [];
 
   bool _autoRetry = false; // Configurable
-
   int _concurrencyCount = 1; // Configurable
 
   bool _isSubmitting = false;
@@ -184,7 +184,6 @@ class _CourseSubmitPageState extends State<CourseSubmitPage>
   void initState() {
     super.initState();
 
-    // Animation
     _blinkController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
@@ -838,17 +837,17 @@ class _CourseSubmitPageState extends State<CourseSubmitPage>
           task.status = CourseSelectionStatus.errorTimeout;
           task.errorMessage = '超时';
         });
+      } on CourseServiceNetworkError {
+        _safeSetState(() {
+          task.endTime = DateTime.now();
+          task.status = CourseSelectionStatus.errorNetwork;
+          task.errorMessage = '网络错误';
+        });
       } catch (e) {
         _safeSetState(() {
           task.endTime = DateTime.now();
-
-          if (e.toString().contains('网络') || e.toString().contains('network')) {
-            task.status = CourseSelectionStatus.errorNetwork;
-            task.errorMessage = '网络错误';
-          } else {
-            task.status = CourseSelectionStatus.errorApi;
-            task.errorMessage = e.toString().replaceAll('Exception: ', '');
-          }
+          task.status = CourseSelectionStatus.errorApi;
+          task.errorMessage = e.toString().replaceAll('Exception: ', '');
         });
       }
 
@@ -867,39 +866,26 @@ class _CourseSubmitPageState extends State<CourseSubmitPage>
     }
   }
 
-  void _showSubmitResult() {
-    final Map<String, bool> courseResults = {};
-
-    for (final task in _tasks) {
-      final courseKey = task.course.uniqueKey;
-      if (task.status == CourseSelectionStatus.success) {
-        courseResults[courseKey] = true;
-      } else if (!courseResults.containsKey(courseKey)) {
-        courseResults[courseKey] = false;
-      }
-    }
-
-    int successCourseCount = courseResults.values
+  void _showResult({required String title, required String? extraNote}) {
+    final courseResults = _getCourseResults();
+    final successCourseCount = courseResults.values
         .where((success) => success)
         .length;
-    int totalCourseCount = courseResults.length;
+    final totalCourseCount = courseResults.length;
 
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: Text(successCourseCount == totalCourseCount ? '提交完成' : '提交结果'),
+        title: Text(title),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('成功：$successCourseCount / $totalCourseCount 门课程'),
-            if (successCourseCount < totalCourseCount) ...[
+            if (extraNote != null) ...[
               const SizedBox(height: 8),
-              const Text(
-                '部分课程选课失败，请检查详情或稍后重试。',
-                style: TextStyle(color: Colors.orange),
-              ),
+              Text(extraNote, style: const TextStyle(color: Colors.orange)),
             ],
           ],
         ),
@@ -915,7 +901,7 @@ class _CourseSubmitPageState extends State<CourseSubmitPage>
     );
   }
 
-  void _showStopResult() {
+  Map<String, bool> _getCourseResults() {
     final Map<String, bool> courseResults = {};
 
     for (final task in _tasks) {
@@ -927,34 +913,19 @@ class _CourseSubmitPageState extends State<CourseSubmitPage>
       }
     }
 
-    int successCourseCount = courseResults.values
-        .where((success) => success)
-        .length;
-    int totalCourseCount = courseResults.length;
+    return courseResults;
+  }
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('提交已停止'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('成功：$successCourseCount / $totalCourseCount 门课程'),
-            const SizedBox(height: 8),
-            const Text('已停止后续提交。', style: TextStyle(color: Colors.orange)),
-          ],
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: const Text('确定'),
-          ),
-        ],
-      ),
+  void _showSubmitResult() {
+    final hasFailure = _getCourseResults().values.any((success) => !success);
+
+    _showResult(
+      title: hasFailure ? '提交结果' : '提交完成',
+      extraNote: hasFailure ? '部分课程选课失败，请检查详情或稍后重试。' : null,
     );
+  }
+
+  void _showStopResult() {
+    _showResult(title: '提交已停止', extraNote: '已停止后续提交。');
   }
 }

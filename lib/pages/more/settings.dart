@@ -73,10 +73,18 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         const SizedBox(width: 8),
         IconButton(
-          icon: Icon(_getThemeIcon(ThemeManager.currentThemeMode)),
+          icon: Icon(switch (ThemeManager.currentThemeMode) {
+            ThemeMode.system => Icons.brightness_auto,
+            ThemeMode.light => Icons.light_mode,
+            ThemeMode.dark => Icons.dark_mode,
+          }),
           onPressed: () {
             ThemeManager.updateThemeMode(
-              _getNextThemeMode(ThemeManager.currentThemeMode),
+              switch (ThemeManager.currentThemeMode) {
+                ThemeMode.system => ThemeMode.light,
+                ThemeMode.light => ThemeMode.dark,
+                ThemeMode.dark => ThemeMode.system,
+              },
             );
             setState(() {});
           },
@@ -111,14 +119,26 @@ class _SettingsPageState extends State<SettingsPage> {
               title: '配置数据',
               subtitle: '清除所有配置数据，包括已登录的账号会话、数据缓存等。',
               isLoading: _isClearingCache,
-              onPressed: _clearConfig,
+              onPressed: () => _clearData(
+                isPrefs: false,
+                dialogMessage: '确定要清除所有配置数据吗？此操作不可撤销。',
+                successMessage: '配置数据已清除',
+                failureMessage: '清除配置数据失败',
+                action: () => _serviceProvider.storeService.delAllConfig(),
+              ),
             ),
             const SizedBox(height: 8),
             _buildDataItem(
               title: '偏好设置',
               subtitle: '清除所有偏好设置，包括跨设备同步的绑定、本地设置等。',
               isLoading: _isClearingPrefs,
-              onPressed: _clearPref,
+              onPressed: () => _clearData(
+                isPrefs: true,
+                dialogMessage: '确定要清除所有偏好设置吗？此操作不可撤销。',
+                successMessage: '偏好设置已清除',
+                failureMessage: '清除偏好设置失败',
+                action: () => _serviceProvider.storeService.delAllPref(),
+              ),
             ),
           ],
         ),
@@ -220,12 +240,18 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Future<void> _clearConfig() async {
+  Future<void> _clearData({
+    required bool isPrefs,
+    required String dialogMessage,
+    required String successMessage,
+    required String failureMessage,
+    required VoidCallback action,
+  }) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('确认清除'),
-        content: const Text('确定要清除所有配置数据吗？此操作不可撤销。'),
+        content: Text(dialogMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -241,88 +267,36 @@ class _SettingsPageState extends State<SettingsPage> {
 
     if (confirmed != true) return;
 
-    setState(() => _isClearingCache = true);
+    setState(() {
+      if (isPrefs) {
+        _isClearingPrefs = true;
+      } else {
+        _isClearingCache = true;
+      }
+    });
     try {
-      _serviceProvider.storeService.delAllConfig();
+      action();
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('配置数据已清除')));
+        ).showSnackBar(SnackBar(content: Text(successMessage)));
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('清除配置数据失败: $e')));
+        ).showSnackBar(SnackBar(content: Text('$failureMessage: $e')));
       }
     } finally {
       if (mounted) {
-        setState(() => _isClearingCache = false);
+        setState(() {
+          if (isPrefs) {
+            _isClearingPrefs = false;
+          } else {
+            _isClearingCache = false;
+          }
+        });
       }
-    }
-  }
-
-  Future<void> _clearPref() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('确认清除'),
-        content: const Text('确定要清除所有偏好设置吗？此操作不可撤销。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('确认'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    setState(() => _isClearingPrefs = true);
-    try {
-      _serviceProvider.storeService.delAllPref();
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('偏好设置已清除')));
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('清除偏好设置失败: $e')));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isClearingPrefs = false);
-      }
-    }
-  }
-
-  IconData _getThemeIcon(ThemeMode mode) {
-    switch (mode) {
-      case ThemeMode.system:
-        return Icons.brightness_auto;
-      case ThemeMode.light:
-        return Icons.light_mode;
-      case ThemeMode.dark:
-        return Icons.dark_mode;
-    }
-  }
-
-  ThemeMode _getNextThemeMode(ThemeMode current) {
-    switch (current) {
-      case ThemeMode.system:
-        return ThemeMode.light;
-      case ThemeMode.light:
-        return ThemeMode.dark;
-      case ThemeMode.dark:
-        return ThemeMode.system;
     }
   }
 }

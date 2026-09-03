@@ -46,7 +46,7 @@ class NetPlanShowDialog extends StatelessWidget {
                                   '= ¥${(userInfo.plan!.unitFlowCost * 1024).toStringAsFixed(2)}/GB',
                             ),
                           ),
-                          _buildQuickCalcButton(context, theme),
+                          _buildQuickCalcButton(context),
                         ],
                       ),
                       const Divider(),
@@ -74,7 +74,7 @@ class NetPlanShowDialog extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      Expanded(child: _buildQuickCalcButton(context, theme)),
+                      Expanded(child: _buildQuickCalcButton(context)),
                     ],
                   ),
             const SizedBox(height: 8),
@@ -174,7 +174,7 @@ class NetPlanShowDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickCalcButton(BuildContext context, ThemeData theme) {
+  Widget _buildQuickCalcButton(BuildContext context) {
     return ElevatedButton.icon(
       icon: const Icon(Icons.calculate_rounded),
       label: const Text('快捷计算'),

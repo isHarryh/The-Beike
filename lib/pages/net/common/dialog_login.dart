@@ -44,11 +44,10 @@ class _NetLoginDialogState extends State<NetLoginDialog> {
           );
 
       if (cachedNetData != null) {
-        final data = cachedNetData;
         if (mounted) {
           setState(() {
-            _usernameController.text = data.account;
-            _passwordController.text = data.password;
+            _usernameController.text = cachedNetData.account;
+            _passwordController.text = cachedNetData.password;
             _hasAutoFilled = true;
           });
         }
@@ -64,11 +63,8 @@ class _NetLoginDialogState extends State<NetLoginDialog> {
   Future<void> _refreshRequirement() async {
     try {
       final sessionState = await _serviceProvider.netService.getSessionState();
-      if (mounted) {
-        setState(() {});
-        if (sessionState.needRandomCode) {
-          await _loadExtraCodeImage();
-        }
+      if (mounted && sessionState.needRandomCode) {
+        await _loadExtraCodeImage();
       }
     } catch (e) {
       if (mounted) {
@@ -144,12 +140,11 @@ class _NetLoginDialogState extends State<NetLoginDialog> {
     });
 
     try {
+      final extraCode = _extraCodeController.text.trim();
       await _serviceProvider.netService.login(
         _usernameController.text.trim(),
         _passwordController.text,
-        randomCode: _extraCodeController.text.trim().isEmpty
-            ? null
-            : _extraCodeController.text.trim(),
+        randomCode: extraCode.isEmpty ? null : extraCode,
       );
 
       // Login succeeded

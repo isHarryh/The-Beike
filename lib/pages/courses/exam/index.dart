@@ -38,9 +38,7 @@ class _ExamPageState extends State<ExamPage> {
 
   void _onServiceStatusChanged() {
     if (mounted && _serviceProvider.coursesService.isOnline) {
-      setState(() {
-        _loadExams();
-      });
+      _loadExams();
     }
   }
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '/services/provider.dart';
 
@@ -29,6 +31,7 @@ class _SyncPoweredState extends State<SyncPowered>
   bool _syncCancelled = false;
   late AnimationController _loadingOpacityController;
   late Animation<double> _loadingOpacity;
+  Timer? _showIndicatorTimer;
 
   @override
   void initState() {
@@ -46,11 +49,22 @@ class _SyncPoweredState extends State<SyncPowered>
       ),
     );
 
+    // Start fading in the loading indicator after the delay
+    _showIndicatorTimer = Timer(_delayBeforeShow, () {
+      if (mounted &&
+          !_syncCompleted &&
+          !_syncCancelled &&
+          _loadingOpacityController.status == AnimationStatus.dismissed) {
+        _loadingOpacityController.forward();
+      }
+    });
+
     _performSync();
   }
 
   @override
   void dispose() {
+    _showIndicatorTimer?.cancel();
     _loadingOpacityController.dispose();
     super.dispose();
   }
@@ -59,9 +73,8 @@ class _SyncPoweredState extends State<SyncPowered>
     try {
       widget.onSyncStart?.call();
 
+      // maybeSyncAndApplyConfig never throws; it ignores sync errors itself.
       await _serviceProvider.maybeSyncAndApplyConfig();
-    } catch (e) {
-      // Silently ignore sync errors
     } finally {
       if (mounted && !_syncCancelled) {
         await _loadingOpacityController.reverse();
@@ -96,55 +109,38 @@ class _SyncPoweredState extends State<SyncPowered>
   }
 
   Widget _buildLoadingIndicator() {
-    return FutureBuilder(
-      future: Future.delayed(_delayBeforeShow),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done &&
-            !_syncCompleted &&
-            !_syncCancelled) {
-          // Start fading in loading indicator after delay
-          if (_loadingOpacityController.status == AnimationStatus.dismissed) {
-            _loadingOpacityController.forward();
-          }
-        }
-
-        return FadeTransition(
-          opacity: _loadingOpacity,
-          child: Container(
-            color: Theme.of(context).colorScheme.surface,
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: 40,
-                    height: 40,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 3,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    '正在同步数据...',
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                  const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: _handleCancel,
-                    child: Text(
-                      '取消',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                ],
+    return FadeTransition(
+      opacity: _loadingOpacity,
+      child: Container(
+        color: Theme.of(context).colorScheme.surface,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
               ),
-            ),
+              const SizedBox(height: 16),
+              Text('正在同步数据...', style: Theme.of(context).textTheme.bodyLarge),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: _handleCancel,
+                child: Text(
+                  '取消',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

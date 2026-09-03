@@ -77,21 +77,12 @@ class _CurriculumPageState extends State<CurriculumPage>
   bool get isActivated => getSettings().activated;
 
   void setActivated(bool activated) {
-    final settings = getSettings();
-    final newSettings = CurriculumSettings(
-      weekendMode: settings.weekendMode,
-      tableSize: settings.tableSize,
-      animationMode: settings.animationMode,
-      activated: activated,
-    );
-    saveSettings(newSettings);
+    saveSettings(getSettings()..activated = activated);
   }
 
   void _onServiceStatusChanged() {
     if (mounted && _serviceProvider.coursesService.isOnline) {
-      setState(() {
-        _loadCurriculumFromCacheOrService();
-      });
+      _loadCurriculumFromCacheOrService();
     }
   }
 

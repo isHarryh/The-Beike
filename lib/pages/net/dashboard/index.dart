@@ -758,10 +758,10 @@ class _NetDashboardPageState extends State<NetDashboardPage>
     if (hasPackage) {
       if (isOverLimit) {
         backgroundColor = Colors.deepOrange;
-        ratio = freeFlow / (flowUsed > 0 ? flowUsed : 1.0);
+        ratio = freeFlow / flowUsed;
       } else {
         backgroundColor = Colors.green;
-        ratio = flowUsed / (freeFlow > 0 ? freeFlow : 1.0);
+        ratio = flowUsed / freeFlow;
       }
     } else {
       // No package, pure blue bar representing current usage

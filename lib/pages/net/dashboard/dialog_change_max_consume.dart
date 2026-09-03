@@ -44,12 +44,8 @@ class _NetChangeMaxConsumeDialogState extends State<NetChangeMaxConsumeDialog> {
     if (limitStr.isEmpty) {
       return false;
     }
-    try {
-      final limit = int.parse(limitStr);
-      return limit >= 0 && limit <= 200;
-    } catch (e) {
-      return false;
-    }
+    final limit = int.tryParse(limitStr);
+    return limit != null && limit >= 0 && limit <= 200;
   }
 
   Future<void> _handleChangeConsume() async {

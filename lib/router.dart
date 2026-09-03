@@ -311,46 +311,23 @@ class _SideNavigationState extends State<_SideNavigation> {
       child: Column(
         children: [
           // Banner
-          if (!widget.isDrawer)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
-              child: Row(
-                children: [
-                  Icon(
-                    _AppConstants.appIcon,
-                    size: 32,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    _AppConstants.appName,
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            )
-          else
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
-              decoration: const BoxDecoration(
-                color: Colors.transparent,
-                border: Border(bottom: BorderSide.none),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    _AppConstants.appIcon,
-                    size: 32,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    _AppConstants.appName,
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
+            child: Row(
+              children: [
+                Icon(
+                  _AppConstants.appIcon,
+                  size: 32,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  _AppConstants.appName,
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ],
             ),
+          ),
 
           // Navigation item
           _buildNavItem(
@@ -428,10 +405,9 @@ class _SideNavigationState extends State<_SideNavigation> {
     for (final item in items) {
       grouped.putIfAbsent(item.category, () => []).add(item);
     }
-    final groupedItems = grouped;
     final widgets = <Widget>[];
 
-    for (final entry in groupedItems.entries) {
+    for (final entry in grouped.entries) {
       final category = entry.key;
       final categoryItems = entry.value;
 

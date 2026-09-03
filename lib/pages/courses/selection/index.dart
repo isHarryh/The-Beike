@@ -36,9 +36,7 @@ class _CourseSelectionPageState extends State<CourseSelectionPage> {
 
   void _onServiceStatusChanged() {
     if (mounted && _serviceProvider.coursesService.isOnline) {
-      setState(() {
-        _loadTerms();
-      });
+      _loadTerms();
     }
   }
 

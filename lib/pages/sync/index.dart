@@ -77,7 +77,7 @@ class _SyncPageState extends State<SyncPage> {
               });
             },
           );
-        } else if (code >= 10111 && code <= 10115 || code == 10117) {
+        } else if ((code >= 10111 && code <= 10115) || code == 10117) {
           // Reset group ID
           action = _createErrorActionButton(
             label: '重置同步组',
@@ -261,12 +261,13 @@ class _SyncPageState extends State<SyncPage> {
             SyncPairingCard(
               serviceProvider: _serviceProvider,
               onSyncDataChanged: _saveSyncData,
-              onSuccess: () => {
-                if (mounted)
+              onSuccess: () {
+                if (mounted) {
                   setState(() {
                     _errorMessage = null;
                     _errorAction = null;
-                  }),
+                  });
+                }
               },
               onError: _handleError,
             ),
@@ -278,83 +279,71 @@ class _SyncPageState extends State<SyncPage> {
   }
 
   Widget _buildErrorCard() {
-    return AnimatedOpacity(
-      opacity: _errorMessage != null ? 1.0 : 0.0,
-      duration: const Duration(milliseconds: 300),
-      child: AnimatedSlide(
-        offset: _errorMessage != null ? Offset.zero : const Offset(0, -0.1),
-        duration: const Duration(milliseconds: 300),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(
-              context,
-            ).colorScheme.errorContainer.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Theme.of(
-                  context,
-                ).colorScheme.error.withValues(alpha: 0.15),
-                blurRadius: 5,
-                offset: const Offset(0, 2),
-              ),
-            ],
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(
+          context,
+        ).colorScheme.errorContainer.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.error.withValues(alpha: 0.15),
+            blurRadius: 5,
+            offset: const Offset(0, 2),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.error_outline_rounded,
-                      color: Theme.of(context).colorScheme.error,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '出现错误',
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onErrorContainer,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _errorMessage!,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onErrorContainer
-                                      .withValues(alpha: 0.9),
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                Icon(
+                  Icons.error_outline_rounded,
+                  color: Theme.of(context).colorScheme.error,
+                  size: 24,
                 ),
-                if (_errorAction != null) ...[
-                  const SizedBox(height: 16),
-                  _buildErrorActionButton(),
-                ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '出现错误',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onErrorContainer,
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _errorMessage!,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onErrorContainer.withValues(alpha: 0.9),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
-          ),
+            if (_errorAction != null) ...[
+              const SizedBox(height: 16),
+              _buildErrorActionButton(),
+            ],
+          ],
         ),
       ),
     );

@@ -41,9 +41,7 @@ class _GradePageState extends State<GradePage> {
 
   void _onServiceStatusChanged() {
     if (mounted && _serviceProvider.coursesService.isOnline) {
-      setState(() {
-        _loadGrades();
-      });
+      _loadGrades();
     }
   }
 
@@ -230,11 +228,7 @@ class _GradePageState extends State<GradePage> {
 
   void _showQuickCalculation() {
     if (_selectedCourseIds.isEmpty) {
-      _showCalculationDialog(
-        title: '快捷计算',
-        content: '请先选择需要参与计算的课程，在左侧打勾。',
-        isError: true,
-      );
+      _showCalculationDialog(title: '快捷计算', content: '请先选择需要参与计算的课程，在左侧打勾。');
       return;
     }
 
@@ -245,11 +239,7 @@ class _GradePageState extends State<GradePage> {
         .toList();
 
     if (selectedGrades.isEmpty) {
-      _showCalculationDialog(
-        title: '快捷计算',
-        content: '选中的课程中没有有效的成绩数据。',
-        isError: true,
-      );
+      _showCalculationDialog(title: '快捷计算', content: '选中的课程中没有有效的成绩数据。');
       return;
     }
 
@@ -277,14 +267,12 @@ class _GradePageState extends State<GradePage> {
           '已选择课程数：${selectedGrades.length}\n'
           '平均成绩：${averageScore.toStringAsFixed(4)}\n'
           '加权成绩：${weightedScore.toStringAsFixed(4)}',
-      isError: false,
     );
   }
 
   void _showCalculationDialog({
     required String title,
     required String content,
-    required bool isError,
   }) {
     showDialog(
       context: context,
