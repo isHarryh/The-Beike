@@ -233,11 +233,13 @@ class ServiceSettingsPreference extends BaseDataClass {
   final String? coursesBaseUrl;
   final String? netBaseUrl;
   final String? syncBaseUrl;
+  final String? payBaseUrl;
 
   ServiceSettingsPreference({
     this.coursesBaseUrl,
     this.netBaseUrl,
     this.syncBaseUrl,
+    this.payBaseUrl,
   });
 
   @override
@@ -245,6 +247,7 @@ class ServiceSettingsPreference extends BaseDataClass {
     'coursesBaseUrl': coursesBaseUrl,
     'netBaseUrl': netBaseUrl,
     'syncBaseUrl': syncBaseUrl,
+    'payBaseUrl': payBaseUrl,
   };
 
   factory ServiceSettingsPreference.fromJson(Map<String, dynamic> json) =>

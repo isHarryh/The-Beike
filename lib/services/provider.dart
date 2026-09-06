@@ -6,9 +6,12 @@ import '/services/store/base.dart';
 import '/services/store/general.dart';
 import '/services/net/base.dart';
 import '/services/net/drcom_net.dart';
+import '/services/payment/base.dart';
+import '/services/payment/ustb_xyjf.dart';
 import '/services/sync/base.dart';
 import '/services/sync/sync_service.dart';
 import '/types/courses.dart';
+import '/types/payment.dart';
 import '/types/sync.dart';
 import '/types/preferences.dart';
 
@@ -20,6 +23,9 @@ class ServiceProvider extends ChangeNotifier {
 
   // Net Service
   late BaseNetService _netService;
+
+  // Payment Service
+  late BasePaymentService _paymentService;
 
   // Sync Service
   late BaseSyncService _syncService;
@@ -34,17 +40,21 @@ class ServiceProvider extends ChangeNotifier {
   ServiceProvider._internal() {
     _coursesService = UstbByytService();
     _netService = DrcomNetService();
+    _paymentService = UstbXyjfService();
     _syncService = SyncService();
     _storeService = GeneralStoreService();
 
     _bindService(_coursesService);
     _bindService(_netService);
+    _bindService(_paymentService);
     _bindService(_syncService);
   }
 
   BaseCoursesService get coursesService => _coursesService;
 
   BaseNetService get netService => _netService;
+
+  BasePaymentService get paymentService => _paymentService;
 
   BaseSyncService get syncService => _syncService;
 
@@ -58,6 +68,9 @@ class ServiceProvider extends ChangeNotifier {
 
     // Try to restore login from cache after store service is initialized
     await _tryAutoLogin();
+
+    // Try to restore payment platform login from cache
+    await _tryPaymentAutoLogin();
 
     // Try to load curriculum data after login
     if (coursesService.isOnline) {
@@ -83,6 +96,9 @@ class ServiceProvider extends ChangeNotifier {
         if (settingsPreference.syncBaseUrl != null) {
           _syncService.baseUrl = settingsPreference.syncBaseUrl!;
         }
+        if (settingsPreference.payBaseUrl != null) {
+          _paymentService.baseUrl = settingsPreference.payBaseUrl!;
+        }
       }
     } catch (e) {
       if (kDebugMode) print('Failed to load service settings: $e');
@@ -102,6 +118,9 @@ class ServiceProvider extends ChangeNotifier {
         syncBaseUrl: _syncService.baseUrl == _syncService.defaultBaseUrl
             ? null
             : _syncService.baseUrl,
+        payBaseUrl: _paymentService.baseUrl == _paymentService.defaultBaseUrl
+            ? null
+            : _paymentService.baseUrl,
       );
       storeService.putPref("service_settings", settingsPreference);
     } catch (e) {
@@ -299,6 +318,26 @@ class ServiceProvider extends ChangeNotifier {
       // On any exception, remain logged out, auto-login should be silent
       if (kDebugMode) {
         print('Auto-login failed: $e');
+      }
+    }
+  }
+
+  /// Try to restore the payment platform login from cache on app startup.
+  Future<void> _tryPaymentAutoLogin() async {
+    try {
+      final cachedData = _storeService.getConfig<PaymentAccountData>(
+        "payment_account_data",
+        PaymentAccountData.fromJson,
+      );
+
+      final token = cachedData?.token;
+      if (token == null || token.isEmpty) return;
+
+      await _paymentService.login(token);
+    } catch (e) {
+      // Silent failure: remain logged out
+      if (kDebugMode) {
+        print('Payment auto-login failed: $e');
       }
     }
   }

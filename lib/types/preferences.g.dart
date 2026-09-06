@@ -116,6 +116,7 @@ ServiceSettingsPreference _$ServiceSettingsPreferenceFromJson(
         coursesBaseUrl: json['coursesBaseUrl'] as String?,
         netBaseUrl: json['netBaseUrl'] as String?,
         syncBaseUrl: json['syncBaseUrl'] as String?,
+        payBaseUrl: json['payBaseUrl'] as String?,
       )
       ..$lastUpdateTime = _$JsonConverterFromJson<String, DateTime>(
         json[r'$lastUpdateTime'],
@@ -132,4 +133,5 @@ Map<String, dynamic> _$ServiceSettingsPreferenceToJson(
   'coursesBaseUrl': instance.coursesBaseUrl,
   'netBaseUrl': instance.netBaseUrl,
   'syncBaseUrl': instance.syncBaseUrl,
+  'payBaseUrl': instance.payBaseUrl,
 };
