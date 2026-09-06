@@ -39,7 +39,7 @@ dependencies:
   http: ^1.6.0
   json_annotation: ^4.12.0
   path_provider: ^2.1.5
-  ustb_sso: ^1.2.0
+  ustb_sso: ^1.3.0
   crypto: ^3.0.7
   fl_chart: ^1.2.0
   package_info_plus: ^10.2.1
@@ -48,6 +48,7 @@ dependencies:
   url_launcher: ^6.3.2
   dio_cookie_manager: ^3.5.0
   cookie_jar: ^4.0.9
+  qr_flutter: ^4.1.0
 
 dev_dependencies:
   flutter_test:
