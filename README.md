@@ -114,6 +114,32 @@
 
 </details>
 
+<br>
+
+对于 Android 安装包，默认情况下会使用设备上的 `~/.android/debug.keystore` 作为签名证书。这意味着不同设备（例如不同轮次的远程 CI 构建）所打包的安装包之间无法进行覆盖更新。建议按照下述方式手动生成和配置签名证书：
+
+<details>
+<summary>💡签名证书配置指引（展开详情）</summary>
+
+1. 执行命令行
+   ```bash
+   keytool -genkey -v -keystore my-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias my-alias
+   ```
+   来生成别名为 `my-alias` 的签名证书文件 `my-key.jks`，期间会要求输入一个密码，需要记住。
+
+2. 在本仓库创建文件 `android/key.properties`，内容如下：
+    ```ini
+    storeFile=<你生成的jks文件的路径>
+    storePassword=<先前设置的密码>
+    keyPassword=<先前设置的密码>
+    keyAlias=my-alias
+    ```
+    构建脚本 `android/app/build.gradle.kts` 会自动读取该文件来进行签名。注意，该文件不应被提交到 Git 仓库中。
+
+3. 如需在 CI 中配置签名证书，请将 `my-key.jks` 文件的内容进行 Base64 编码，并将编码后的字符串配置为 CI 的环境变量 `KEYSTORE_BASE64`、将签名的密码配置为环境变量 `KEYSTORE_PASSWORD` 和 `KEY_PASSWORD`、将别名配置为环境变量 `KEY_ALIAS`。CI 会自动使用这些环境变量来生成 `android/key.properties` 文件以进行签名。
+
+</details>
+
 ## 关 于 <sub>About</sub>
 
 ### 许可证

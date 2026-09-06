@@ -41,5 +41,8 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Distribution
+# Distribution and signing
 /dist/
+key.properties
+*.jks
+*.keystore

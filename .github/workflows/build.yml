@@ -94,6 +94,28 @@ jobs:
       - name: Get pub deps
         run: flutter pub get
 
+      - name: Setup Android signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::warning::Android signing: ANDROID_KEYSTORE_BASE64 is not set. Falling back to debug signing."
+            exit 0
+          fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release-upload.jks
+          sha1=$(keytool -list -v -keystore android/app/release-upload.jks -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" | grep SHA1 | awk '{print $2}')
+          echo "::notice::Android signing: Keystore fingerprint SHA1 is $sha1"
+
+          cat > android/key.properties <<EOF
+          storeFile=release-upload.jks
+          storePassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+
       - name: Build APK
         run: flutter build apk --release --obfuscate --split-debug-info=build/symbols
 
