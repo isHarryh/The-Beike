@@ -234,6 +234,16 @@ class _SettingsPageState extends State<SettingsPage> {
                 _serviceProvider.saveServiceSettings();
               },
             ),
+            const SizedBox(height: 16),
+            _ServiceUrlField(
+              label: '缴费服务',
+              defaultValue: _serviceProvider.paymentService.defaultBaseUrl,
+              currentValue: _serviceProvider.paymentService.baseUrl,
+              onChanged: (value) {
+                _serviceProvider.paymentService.baseUrl = value;
+                _serviceProvider.saveServiceSettings();
+              },
+            ),
           ],
         ),
       ),

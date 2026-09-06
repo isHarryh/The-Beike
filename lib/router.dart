@@ -12,6 +12,7 @@ import 'pages/courses/grade/index.dart';
 import 'pages/courses/account/index.dart';
 import 'pages/net/dashboard/index.dart';
 import 'pages/net/traffic/index.dart';
+import 'pages/payment/index.dart';
 import 'pages/sync/index.dart';
 import 'pages/more/anno.dart';
 import 'pages/more/settings.dart';
@@ -67,6 +68,12 @@ class _AppConstants {
       title: '流量查询',
       path: '/net/traffic',
       category: '校园网',
+    ),
+    _NavigationItem(
+      icon: Icons.payments_outlined,
+      title: '充值缴费',
+      path: '/payment',
+      category: '财务',
     ),
     _NavigationItem(
       icon: Icons.sync,
@@ -136,6 +143,11 @@ class AppRouter {
         name: 'NetTrafficRoute',
         path: '/net/traffic',
         builder: (context, data) => const MainLayout(child: NetTrafficPage()),
+      ),
+      NamedRouteDef(
+        name: 'PaymentRoute',
+        path: '/payment',
+        builder: (context, data) => const MainLayout(child: PaymentPage()),
       ),
       NamedRouteDef(
         name: 'SettingsRoute',
