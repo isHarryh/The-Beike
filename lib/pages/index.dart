@@ -82,6 +82,16 @@ class _HomePageState extends State<HomePage> with PageStateMixin {
     ),
   ];
 
+  late final List<_FeatureCardConfig> _financeFeatureCards = [
+    _FeatureCardConfig(
+      title: '充值缴费',
+      description: '余额查询与在线缴费',
+      icon: Icons.payment,
+      color: Colors.amber,
+      route: '/payment',
+    ),
+  ];
+
   @override
   void onServiceInit() {
     _loadUserInfo();
@@ -257,6 +267,8 @@ class _HomePageState extends State<HomePage> with PageStateMixin {
             _buildFeatureGrid(),
             const SizedBox(height: 32),
             _buildNetFeatureGrid(),
+            const SizedBox(height: 32),
+            _buildFinanceFeatureGrid(),
             const SizedBox(height: 32),
           ],
         ),
@@ -835,6 +847,87 @@ class _HomePageState extends State<HomePage> with PageStateMixin {
 
   Widget _buildNetWideLayout() {
     return SizedBox(height: 120, child: _buildCardRow(_netFeatureCards));
+  }
+
+  Widget _buildFinanceFeatureGrid() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool isNarrowScreen = constraints.maxWidth < 600;
+        final theme = Theme.of(context);
+
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainer.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.account_balance_wallet,
+                    color: theme.colorScheme.onPrimaryContainer,
+                    size: 22,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '财务',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "校园卡充值与费用缴纳",
+                style: TextStyle(
+                  fontSize: 14,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (isNarrowScreen) ...[
+                _buildFinanceNarrowLayout(),
+              ] else ...[
+                _buildFinanceWideLayout(),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFinanceNarrowLayout() {
+    return Column(
+      children: _financeFeatureCards.asMap().entries.expand((entry) {
+        final index = entry.key;
+        final card = entry.value;
+        return [
+          if (index > 0) const SizedBox(height: 8),
+          SizedBox(
+            height: 100,
+            child: _buildFeatureCard(
+              context,
+              card.title,
+              card.description,
+              card.icon,
+              card.color,
+              () => context.router.pushPath(card.route),
+            ),
+          ),
+        ];
+      }).toList(),
+    );
+  }
+
+  Widget _buildFinanceWideLayout() {
+    return SizedBox(height: 120, child: _buildCardRow(_financeFeatureCards));
   }
 
   Widget _buildAccountCard(BuildContext context) {

@@ -365,7 +365,7 @@ class _NetDashboardPageState extends State<NetDashboardPage>
       slivers: [
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -497,7 +497,7 @@ class _NetDashboardPageState extends State<NetDashboardPage>
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Container(
               decoration: BoxDecoration(
                 color: theme.colorScheme.surfaceContainerHighest.withValues(
