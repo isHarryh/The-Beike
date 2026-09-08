@@ -25,6 +25,19 @@ class CurriculumTable extends StatelessWidget {
   final Map<int, int> weekDates;
   final int currentWeek;
 
+  /// Overlay classes (e.g. wanted courses in selection preview) rendered
+  /// on top of the base curriculum. Slots shared by both layers, or by
+  /// multiple overlay classes, are highlighted as conflicts.
+  final List<ClassItem> overlayClasses;
+
+  /// Whether overlay classes blink (fade in and out, ~800ms per direction)
+  /// to draw attention, e.g. wanted courses in the selection preview.
+  /// Slots with a base class alternate between the two layers, while empty
+  /// slots fade in and out of view.
+  final bool blinkOverlayClasses;
+
+  static const Color _overlayClassColor = Color(0xFF7E57C2);
+
   const CurriculumTable({
     super.key,
     required this.curriculumData,
@@ -32,27 +45,86 @@ class CurriculumTable extends StatelessWidget {
     required this.settings,
     required this.weekDates,
     required this.currentWeek,
+    this.overlayClasses = const [],
+    this.blinkOverlayClasses = false,
   });
 
   List<ClassItem> get weekClasses => curriculumData.allClasses
       .where((classItem) => classItem.weeks.contains(currentWeek))
       .toList();
 
+  List<ClassItem> get overlayWeekClasses => overlayClasses
+      .where((classItem) => classItem.weeks.contains(currentWeek))
+      .toList();
+
   static const List<String> dayNames = ['一', '二', '三', '四', '五', '六', '日'];
 
-  void _showClassDetails(BuildContext context, ClassItem classItem) {
+  void _showClassDetails(
+    BuildContext context,
+    List<ClassItem> classItems,
+    List<ClassItem> overlayItems,
+  ) {
+    final hasOverlay = overlayItems.isNotEmpty;
+    final allItems = [...classItems, ...overlayItems];
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(classItem.className),
+        title: Text(allItems.first.className),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('教师: ${classItem.teacherName}'),
-            Text('地点: ${classItem.locationName}'),
-            Text('周次: ${classItem.weeksText}'),
-            Text('节次: 第${classItem.period}大节'),
+            if (!hasOverlay)
+              for (final classItem in classItems) ...[
+                Text('教师: ${classItem.teacherName}'),
+                Text('地点: ${classItem.locationName}'),
+                Text('周次: ${classItem.weeksText}'),
+                Text('节次: 第${classItem.period}大节'),
+              ]
+            else
+              for (final classItem in allItems) ...[
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: overlayClasses.contains(classItem)
+                            ? _overlayClassColor.withValues(alpha: 0.15)
+                            : Colors.green.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        overlayClasses.contains(classItem) ? '备选' : '已选',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: overlayClasses.contains(classItem)
+                              ? _overlayClassColor
+                              : Colors.green.shade700,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('教师: ${classItem.teacherName}'),
+                          Text('地点: ${classItem.locationName}'),
+                          Text('周次: ${classItem.weeksText}'),
+                          Text('节次: 第${classItem.period}大节'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+              ],
           ],
         ),
         actions: [
@@ -172,6 +244,7 @@ class CurriculumTable extends StatelessWidget {
                         context,
                         settings,
                         weekClasses,
+                        overlayWeekClasses,
                         day,
                         majorPeriods[periodIndex],
                       ),
@@ -312,6 +385,7 @@ class CurriculumTable extends StatelessWidget {
     BuildContext context,
     CurriculumSettings settings,
     List<ClassItem> weekClasses,
+    List<ClassItem> overlayWeekClasses,
     int day,
     _MajorPeriodInfo majorPeriod,
   ) {
@@ -319,27 +393,67 @@ class CurriculumTable extends StatelessWidget {
       return classItem.day == day && classItem.period == majorPeriod.id;
     }).toList();
 
+    final overlaysInSlot = overlayWeekClasses.where((classItem) {
+      return classItem.day == day && classItem.period == majorPeriod.id;
+    }).toList();
+
+    final hasConflict =
+        (classesInSlot.isNotEmpty && overlaysInSlot.isNotEmpty) ||
+        overlaysInSlot.length > 1;
+
+    final blink = blinkOverlayClasses && overlaysInSlot.isNotEmpty;
     final cellHeight = settings.tableSize.height;
 
     return Container(
       height: cellHeight,
       decoration: BoxDecoration(
-        color: classesInSlot.isEmpty
-            ? Theme.of(context).colorScheme.surface
-            : _getClassColor(classesInSlot.first),
+        color: classesInSlot.isNotEmpty
+            ? _getClassColor(classesInSlot.first)
+            : overlaysInSlot.isNotEmpty
+            ? (blink
+                  ? Theme.of(context).colorScheme.surface
+                  : _overlayClassColor)
+            : Theme.of(context).colorScheme.surface,
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-          width: 0.5,
+          color: hasConflict
+              ? Theme.of(context).colorScheme.error
+              : Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+          width: hasConflict ? 2 : 0.5,
         ),
       ),
       child: Stack(
         children: [
           Positioned.fill(
-            child: classesInSlot.isEmpty
+            child: classesInSlot.isEmpty && overlaysInSlot.isEmpty
                 ? const SizedBox.expand()
-                : _buildClassContent(context, classesInSlot, settings),
+                : _buildClassContent(
+                    context,
+                    classesInSlot,
+                    overlaysInSlot,
+                    settings,
+                  ),
           ),
+          if (hasConflict)
+            Positioned(
+              right: 2,
+              top: 2,
+              child: _buildConflictBadge(context),
+            ),
         ],
+      ),
+    );
+  }
+
+  /// Renders a warning badge visible on any background, including while a
+  /// blinking overlay layer fades towards fully transparent.
+  Widget _buildConflictBadge(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(1),
+      decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+      child: Icon(
+        Icons.warning_amber_rounded,
+        size: 12,
+        color: Theme.of(context).colorScheme.error,
       ),
     );
   }
@@ -347,17 +461,33 @@ class CurriculumTable extends StatelessWidget {
   Widget _buildClassContent(
     BuildContext context,
     List<ClassItem> classesInSlot,
+    List<ClassItem> overlaysInSlot,
     CurriculumSettings settings,
   ) {
     final maxLines = settings.tableSize.height >= 100 ? 3 : 2;
-    final firstClass = classesInSlot.first;
+    final firstClass = classesInSlot.isNotEmpty
+        ? classesInSlot.first
+        : overlaysInSlot.first;
     final useAnimation = settings.animationMode != AnimationMode.none;
+    final blink = blinkOverlayClasses && overlaysInSlot.isNotEmpty;
+
+    final content = blink
+        ? _buildBlinkingLayers(classesInSlot, overlaysInSlot, maxLines)
+        : _buildClassContentInner(
+            firstClass,
+            [...classesInSlot, ...overlaysInSlot],
+            maxLines,
+          );
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         mouseCursor: WidgetStateMouseCursor.clickable,
-        onTap: () => _showClassDetails(context, firstClass),
+        onTap: () => _showClassDetails(
+          context,
+          classesInSlot,
+          overlaysInSlot,
+        ),
         splashColor: Theme.of(
           context,
         ).colorScheme.surface.withValues(alpha: 0.3),
@@ -371,23 +501,51 @@ class CurriculumTable extends StatelessWidget {
                 padding: const EdgeInsets.all(2.0),
                 width: double.infinity,
                 height: double.infinity,
-                child: _buildClassContentInner(
-                  firstClass,
-                  classesInSlot,
-                  maxLines,
-                ),
+                child: content,
               )
             : Container(
                 padding: const EdgeInsets.all(2.0),
                 width: double.infinity,
                 height: double.infinity,
-                child: _buildClassContentInner(
-                  firstClass,
-                  classesInSlot,
-                  maxLines,
-                ),
+                child: content,
               ),
       ),
+    );
+  }
+
+  /// Layers the base class (if any) below a blinking overlay layer: slots
+  /// shared by both layers alternate between them, while overlay-only slots
+  /// fade in and out of the empty cell.
+  Widget _buildBlinkingLayers(
+    List<ClassItem> classesInSlot,
+    List<ClassItem> overlaysInSlot,
+    int maxLines,
+  ) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        if (classesInSlot.isNotEmpty)
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: _getClassColor(classesInSlot.first),
+            ),
+            child: _buildClassContentInner(
+              classesInSlot.first,
+              classesInSlot,
+              maxLines,
+            ),
+          ),
+        _BlinkingOverlay(
+          child: DecoratedBox(
+            decoration: const BoxDecoration(color: _overlayClassColor),
+            child: _buildClassContentInner(
+              overlaysInSlot.first,
+              overlaysInSlot,
+              maxLines,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -525,5 +683,46 @@ class CurriculumTable extends StatelessWidget {
       }
     }
     return null;
+  }
+}
+
+/// Fades its child in and out continuously (~800ms per direction) to draw
+/// attention. Renders the child statically when the system requests reduced
+/// animations.
+class _BlinkingOverlay extends StatefulWidget {
+  final Widget child;
+
+  const _BlinkingOverlay({required this.child});
+
+  @override
+  State<_BlinkingOverlay> createState() => _BlinkingOverlayState();
+}
+
+class _BlinkingOverlayState extends State<_BlinkingOverlay>
+    with SingleTickerProviderStateMixin {
+  static const Duration _blinkDuration = Duration(milliseconds: 800);
+
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: _blinkDuration,
+  )..repeat(reverse: true);
+
+  late final Animation<double> _opacity = CurvedAnimation(
+    parent: _controller,
+    curve: Curves.easeInOut,
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.of(context).disableAnimations) {
+      return widget.child;
+    }
+    return FadeTransition(opacity: _opacity, child: widget.child);
   }
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
+import '/services/store/base.dart';
 import '/types/courses.dart';
+import '/types/preferences.dart';
 import '/types/base.dart';
 
 String formatCacheTime(BaseDataClass cachedData) {
@@ -10,6 +12,152 @@ String formatCacheTime(BaseDataClass cachedData) {
   final timeString =
       '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
   return '$dateString $timeString';
+}
+
+// Curriculum settings helpers
+
+CurriculumSettings readCurriculumSettings(BaseStoreService store) {
+  return store.getPref<CurriculumSettings>(
+        "curriculum",
+        CurriculumSettings.fromJson,
+      ) ??
+      CurriculumSettings.defaultSettings;
+}
+
+void saveCurriculumSettings(BaseStoreService store, CurriculumSettings settings) {
+  store.putPref<CurriculumSettings>("curriculum", settings);
+}
+
+// Week selector
+
+class CurriculumWeekSelector extends StatelessWidget {
+  final int currentWeek;
+  final int maxWeek;
+  final int? todayWeek;
+  final ValueChanged<int> onWeekChanged;
+
+  const CurriculumWeekSelector({
+    super.key,
+    required this.currentWeek,
+    required this.maxWeek,
+    this.todayWeek,
+    required this.onWeekChanged,
+  });
+
+  void _gotoWeekSafe(int newWeek) {
+    newWeek = newWeek.clamp(1, maxWeek);
+    if (newWeek == currentWeek) return;
+    onWeekChanged(newWeek);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        IconButton(
+          onPressed: () => _gotoWeekSafe(currentWeek - 1),
+          icon: const Icon(Icons.chevron_left),
+        ),
+        Expanded(
+          child: GestureDetector(
+            onTap: () => _showWeekJumper(context),
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: Container(
+                padding: const EdgeInsets.all(8.0),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '第 $currentWeek 周',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ),
+        ),
+        Tooltip(
+          message: currentWeek >= maxWeek ? '已经到最大周次了~' : '',
+          child: IconButton(
+            onPressed: () => _gotoWeekSafe(currentWeek + 1),
+            icon: const Icon(Icons.chevron_right),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showWeekJumper(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.calendar_today),
+            const SizedBox(width: 8),
+            const Text('周次跳转'),
+          ],
+        ),
+        content: SizedBox(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: SingleChildScrollView(
+              child: Wrap(
+                spacing: 8.0,
+                runSpacing: 8.0,
+                children: List.generate(maxWeek, (index) {
+                  final week = index + 1;
+                  final isCurrentWeek = week == currentWeek;
+                  final isTodayWeek = week == todayWeek;
+
+                  return FilterChip(
+                    mouseCursor: WidgetStateMouseCursor.clickable,
+                    label: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('$week'),
+                        if (isCurrentWeek) ...[
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.visibility,
+                            size: 18,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ],
+                        if (isTodayWeek && !isCurrentWeek) ...[
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.today,
+                            size: 18,
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
+                        ],
+                      ],
+                    ),
+                    selected: false,
+                    onSelected: (selected) {
+                      Navigator.of(context).pop();
+                      _gotoWeekSafe(week);
+                    },
+                    backgroundColor: isCurrentWeek
+                        ? Theme.of(
+                            context,
+                          ).colorScheme.primaryContainer.withValues(alpha: 0.6)
+                        : null,
+                  );
+                }),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class ChooseCacheCard extends StatelessWidget {

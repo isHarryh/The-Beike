@@ -173,8 +173,9 @@ class ServiceProvider extends ChangeNotifier {
   }
 
   Future<CurriculumIntegratedData> loadCurriculumForTerm(
-    TermInfo termInfo,
-  ) async {
+    TermInfo termInfo, {
+    bool writeToCache = true,
+  }) async {
     if (!coursesService.isOnline) {
       throw const CourseServiceOffline();
     }
@@ -199,10 +200,12 @@ class ServiceProvider extends ChangeNotifier {
     );
 
     // Cache the data
-    storeService.putConfig<CurriculumIntegratedData>(
-      "curriculum_data",
-      integratedData,
-    );
+    if (writeToCache) {
+      storeService.putConfig<CurriculumIntegratedData>(
+        "curriculum_data",
+        integratedData,
+      );
+    }
 
     return integratedData;
   }

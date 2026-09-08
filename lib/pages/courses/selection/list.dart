@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import '/services/provider.dart';
 import '/types/courses.dart';
@@ -6,6 +8,7 @@ import 'detail.dart';
 import 'submit.dart';
 import 'common.dart';
 import 'filter.dart';
+import 'timetable.dart';
 
 class CourseListPage extends StatefulWidget {
   final TermInfo termInfo;
@@ -46,12 +49,17 @@ class _CourseListPageState extends State<CourseListPage>
   double _minAvailableHours = 0;
   double _maxAvailableHours = 100;
 
+  CurriculumIntegratedData? _timetableData;
+  bool _timetableLoading = false;
+  String? _timetableErrorMessage;
+
   @override
   void initState() {
     super.initState();
     _cooldownHandler = CooldownHandler(vsync: this);
     _cooldownHandler.controller.addListener(_handleCooldownTick);
     _loadCourseTabs();
+    _loadTimetableData();
   }
 
   @override
@@ -289,6 +297,85 @@ class _CourseListPageState extends State<CourseListPage>
     return MediaQuery.of(context).size.width >= 900;
   }
 
+  /// Loads the curriculum for the comparison timetable. Always fetched
+  /// online and never touching the cache system of the curriculum page.
+  Future<void> _loadTimetableData() async {
+    if (!_serviceProvider.coursesService.isOnline) {
+      if (!mounted) return;
+      setState(() {
+        _timetableData = null;
+        _timetableLoading = false;
+        _timetableErrorMessage = '请先登录后再查看课表';
+      });
+      return;
+    }
+
+    setState(() {
+      _timetableLoading = true;
+      _timetableErrorMessage = null;
+    });
+
+    try {
+      final data = await _serviceProvider.loadCurriculumForTerm(
+        widget.termInfo,
+        writeToCache: false,
+      );
+      if (!mounted) return;
+
+      setState(() {
+        _timetableData = data;
+        _timetableLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _timetableData = null;
+        _timetableLoading = false;
+        _timetableErrorMessage = e.toString();
+      });
+    }
+  }
+
+  Widget _buildTimetableButton(
+    BuildContext context,
+    CourseSelectionState selectionState,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final hasConflict =
+        !_timetableLoading &&
+        _timetableData != null &&
+        hasConflictInAnyWeek(
+          _timetableData!,
+          parseWantedCourses(
+            _timetableData!,
+            selectionState.wantedCourses,
+          ).items,
+        );
+
+    return FilledButton(
+      onPressed: () {
+        _loadTimetableData();
+        Scaffold.maybeOf(context)?.openEndDrawer();
+      },
+      style: FilledButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        backgroundColor: hasConflict ? colorScheme.error : null,
+        foregroundColor: hasConflict ? colorScheme.onError : null,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('对照课表'),
+          const SizedBox(width: 6),
+          const Icon(Icons.calendar_month, size: 16),
+          const SizedBox(width: 6),
+          Text('${widget.termInfo.year}-${widget.termInfo.season}'),
+        ],
+      ),
+    );
+  }
+
   void _showFilterDialog() {
     if (_isWideScreen(context)) {
       // 宽屏模式下，筛选条件在侧边栏中实时更新，不需要弹窗
@@ -441,7 +528,25 @@ class _CourseListPageState extends State<CourseListPage>
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: [buildTermInfoDisplay(context, widget.termInfo)],
+        actions: [
+          Builder(
+            builder: (context) =>
+                _buildTimetableButton(context, selectionState),
+          ),
+        ],
+      ),
+      endDrawerEnableOpenDragGesture: false,
+      endDrawer: Drawer(
+        width: min(MediaQuery.of(context).size.width - 24, 480),
+        child: SafeArea(
+          child: SelectionTimetablePanel(
+            curriculumData: _timetableData,
+            isLoading: _timetableLoading,
+            errorMessage: _timetableErrorMessage,
+            wantedCourses: selectionState.wantedCourses,
+            onRefresh: _loadTimetableData,
+          ),
+        ),
       ),
       body: isWideScreen
           ? Row(

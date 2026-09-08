@@ -51,18 +51,11 @@ class _CurriculumPageState extends State<CurriculumPage>
   }
 
   CurriculumSettings getSettings() {
-    final cached = _serviceProvider.storeService.getPref<CurriculumSettings>(
-      "curriculum",
-      CurriculumSettings.fromJson,
-    );
-    return cached ?? CurriculumSettings.defaultSettings;
+    return readCurriculumSettings(_serviceProvider.storeService);
   }
 
   void saveSettings(CurriculumSettings settings) {
-    _serviceProvider.storeService.putPref<CurriculumSettings>(
-      "curriculum",
-      settings,
-    );
+    saveCurriculumSettings(_serviceProvider.storeService, settings);
   }
 
   bool get isActivated => getSettings().activated;
@@ -435,115 +428,11 @@ class _CurriculumPageState extends State<CurriculumPage>
   }
 
   Widget _buildWeekSelector() {
-    return Row(
-      children: [
-        IconButton(
-          onPressed: () => _gotoWeekSafe(_currentWeek - 1),
-          icon: const Icon(Icons.chevron_left),
-        ),
-        Expanded(
-          child: GestureDetector(
-            onTap: _showWeekJumper,
-            child: MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: Container(
-                padding: const EdgeInsets.all(8.0),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '第 $_currentWeek 周',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          ),
-        ),
-        Tooltip(
-          message: _currentWeek >= _curriculumData!.getMaxValidWeekIndex()
-              ? '已经到最大周次了~'
-              : '',
-          child: IconButton(
-            onPressed: () => _gotoWeekSafe(_currentWeek + 1),
-            icon: const Icon(Icons.chevron_right),
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _showWeekJumper() {
-    final maxValidWeek = _curriculumData!.getMaxValidWeekIndex();
-    final todayWeek = _curriculumData!.getWeekIndexToday();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            const Icon(Icons.calendar_today),
-            const SizedBox(width: 8),
-            const Text('周次跳转'),
-          ],
-        ),
-        content: SizedBox(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: SingleChildScrollView(
-              child: Wrap(
-                spacing: 8.0,
-                runSpacing: 8.0,
-                children: List.generate(maxValidWeek, (index) {
-                  final week = index + 1;
-                  final isCurrentWeek = week == _currentWeek;
-                  final isTodayWeek = week == todayWeek;
-
-                  return FilterChip(
-                    mouseCursor: WidgetStateMouseCursor.clickable,
-                    label: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text('$week'),
-                        if (isCurrentWeek) ...[
-                          const SizedBox(width: 6),
-                          Icon(
-                            Icons.visibility,
-                            size: 18,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                        ],
-                        if (isTodayWeek && !isCurrentWeek) ...[
-                          const SizedBox(width: 6),
-                          Icon(
-                            Icons.today,
-                            size: 18,
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                        ],
-                      ],
-                    ),
-                    selected: false,
-                    onSelected: (selected) {
-                      Navigator.of(context).pop();
-                      _gotoWeekSafe(week);
-                    },
-                    backgroundColor: isCurrentWeek
-                        ? Theme.of(
-                            context,
-                          ).colorScheme.primaryContainer.withValues(alpha: 0.6)
-                        : null,
-                  );
-                }),
-              ),
-            ),
-          ),
-        ),
-      ),
+    return CurriculumWeekSelector(
+      currentWeek: _currentWeek,
+      maxWeek: _curriculumData!.getMaxValidWeekIndex(),
+      todayWeek: _curriculumData!.getWeekIndexToday(),
+      onWeekChanged: _gotoWeekSafe,
     );
   }
 

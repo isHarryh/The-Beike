@@ -89,7 +89,7 @@ extension ClassItemUstbByytExtension on ClassItem {
       }
 
       // 解析周次
-      final weeks = _parseWeeks(weeksText);
+      final weeks = parseWeeksText(weeksText);
 
       // 从课程名称生成颜色ID（简单哈希）
       final colorId = className.hashCode % 10;
@@ -112,44 +112,6 @@ extension ClassItemUstbByytExtension on ClassItem {
     } catch (e) {
       return null;
     }
-  }
-
-  static List<int> _parseWeeks(String weeksText) {
-    final weeks = <int>[];
-
-    // 移除"周"字符，保留数字、逗号、横线
-    final cleanText = weeksText.replaceAll('周', '').trim();
-
-    // 按逗号分割不同的周期段
-    final segments = cleanText.split(',');
-
-    for (final segment in segments) {
-      final trimmedSegment = segment.trim();
-      if (trimmedSegment.isEmpty) continue;
-
-      if (trimmedSegment.contains('-')) {
-        // 处理范围，如 "1-8" 或 "9-16"
-        final parts = trimmedSegment.split('-');
-        if (parts.length == 2) {
-          final start = int.tryParse(parts[0].trim());
-          final end = int.tryParse(parts[1].trim());
-          if (start != null && end != null && start <= end) {
-            for (int i = start; i <= end; i++) {
-              weeks.add(i);
-            }
-          }
-        }
-      } else {
-        // 处理单个周次，如 "1" 或 "3"
-        final week = int.tryParse(trimmedSegment);
-        if (week != null) {
-          weeks.add(week);
-        }
-      }
-    }
-
-    // 去重并排序
-    return weeks.toSet().toList()..sort();
   }
 }
 
@@ -517,4 +479,175 @@ extension ExamInfoUstbByytExtension on ExamInfo {
       minorId: int.tryParse(data['KSJC']?.toString() ?? '0') ?? 0,
     );
   }
+}
+
+// Schedule text parsing
+
+/// Parses a weeks description text like "1-8,9-16" into a sorted list of
+/// unique week indexes.
+List<int> parseWeeksText(String weeksText) {
+  final weeks = <int>[];
+
+  // 移除"周"字符，保留数字、逗号、横线
+  final cleanText = weeksText.replaceAll('周', '').trim();
+
+  // 按逗号分割不同的周期段
+  final segments = cleanText.split(',');
+
+  for (final segment in segments) {
+    final trimmedSegment = segment.trim();
+    if (trimmedSegment.isEmpty) continue;
+
+    if (trimmedSegment.contains('-')) {
+      // 处理范围，如 "1-8" 或 "9-16"
+      final parts = trimmedSegment.split('-');
+      if (parts.length == 2) {
+        final start = int.tryParse(parts[0].trim());
+        final end = int.tryParse(parts[1].trim());
+        if (start != null && end != null && start <= end) {
+          for (int i = start; i <= end; i++) {
+            weeks.add(i);
+          }
+        }
+      }
+    } else {
+      // 处理单个周次，如 "1" 或 "3"
+      final week = int.tryParse(trimmedSegment);
+      if (week != null) {
+        weeks.add(week);
+      }
+    }
+  }
+
+  // 去重并排序
+  return weeks.toSet().toList()..sort();
+}
+
+/// The result of parsing schedule texts of a course.
+class ScheduleParseResult {
+  /// Parsed schedule entries, ready to be rendered as overlay classes.
+  final List<ClassItem> items;
+
+  /// Raw schedule texts that could not be parsed.
+  final List<String> unparsed;
+
+  const ScheduleParseResult(this.items, this.unparsed);
+}
+
+const _scheduleDayNames = {
+  '一': 1,
+  '二': 2,
+  '三': 3,
+  '四': 4,
+  '五': 5,
+  '六': 6,
+  '日': 7,
+  '天': 7,
+};
+
+/// Parses the schedule texts of a course (e.g. "1-8周,星期二第5-6节 教学楼109(T)")
+/// into [ClassItem] entries placed on major periods, so that they can be
+/// rendered on the curriculum table as overlay classes.
+ScheduleParseResult parseCourseSchedule(
+  CourseInfo course,
+  List<ClassPeriod> referPeriods,
+) {
+  final detail = course.classDetail;
+  final texts = detail?.detailSchedule;
+  if (texts == null || texts.isEmpty) {
+    return const ScheduleParseResult([], []);
+  }
+
+  // Build the minor period -> major period mapping
+  final minorToMajor = <int, int>{};
+  for (final period in referPeriods) {
+    minorToMajor[period.minorId] = period.majorId;
+  }
+
+  final items = <ClassItem>[];
+  final unparsed = <String>[];
+
+  for (final text in texts) {
+    try {
+      // Weeks: leading segment like "1-8周" or "1周"
+      final weeksMatch = RegExp(r'^\s*([\d,，\-–\s]+?)\s*周').firstMatch(text);
+      if (weeksMatch == null) {
+        unparsed.add(text);
+        continue;
+      }
+      final weeks = parseWeeksText(weeksMatch.group(1)!);
+      if (weeks.isEmpty) {
+        unparsed.add(text);
+        continue;
+      }
+
+      // Day: like "星期二" or "周日"
+      final dayMatch = RegExp(r'星期\s*([一二三四五六日天])').firstMatch(text);
+      if (dayMatch == null) {
+        unparsed.add(text);
+        continue;
+      }
+      final day = _scheduleDayNames[dayMatch.group(1)!];
+      if (day == null) {
+        unparsed.add(text);
+        continue;
+      }
+
+      // Minor periods: like "第5-6节", "第3节" or "第5,6节"
+      final periodMatch = RegExp(
+        r'第\s*(\d+)\s*(?:[-–,，~]\s*(\d+))?\s*节',
+      ).firstMatch(text);
+      if (periodMatch == null) {
+        unparsed.add(text);
+        continue;
+      }
+      final minorStart = int.parse(periodMatch.group(1)!);
+      final minorEnd = int.tryParse(periodMatch.group(2) ?? '') ?? minorStart;
+      if (minorEnd < minorStart) {
+        unparsed.add(text);
+        continue;
+      }
+
+      // Map minor periods to major periods
+      final majors = <int>{};
+      for (int minor = minorStart; minor <= minorEnd; minor++) {
+        final major = minorToMajor[minor];
+        if (major != null) {
+          majors.add(major);
+        }
+      }
+      if (majors.isEmpty) {
+        unparsed.add(text);
+        continue;
+      }
+
+      // Location: text after the period segment
+      final location = text
+          .substring(periodMatch.end)
+          .replaceAll(RegExp(r'\s+'), ' ')
+          .trim();
+      final locationName = location == '无地点' || location == 'No location'
+          ? ''
+          : location;
+
+      for (final major in majors) {
+        items.add(
+          ClassItem(
+            day: day,
+            period: major,
+            weeks: weeks,
+            weeksText: weeksMatch.group(0)!,
+            className: course.combinedName,
+            teacherName: detail?.detailTeacherName ?? '',
+            locationName: locationName,
+            periodName: '第$major大节',
+          ),
+        );
+      }
+    } catch (e) {
+      unparsed.add(text);
+    }
+  }
+
+  return ScheduleParseResult(items, unparsed);
 }
