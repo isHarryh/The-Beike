@@ -44,6 +44,13 @@ When handling network requests using the `dio` package, please read the `/using-
 - Flutter 3.44: built-in Kotlin migration for AGP 9; `IconData` is now `final`; `onReorder` and `cacheExtent`/`cacheExtentStyle` deprecated (use `ScrollCacheExtent`); `CupertinoPageTransitionsBuilder` moved to `cupertino.dart`; Xcode ≥ 15 required, SwiftPM on by default in stable; new templates use AGP 9.0.1 / Gradle 9.1.0 / minSdk 24 / targetSdk 36.
 - New APIs worth knowing: `CarouselView`, `Navigator.popUntilWithResult`, `ScrollCacheExtent`, `SizedBox.square()`, `FormState.fields`, `ThemeMode.isDark/isLight/isSystem`.
 
+### Android Gradle Toolchain Baseline
+
+- Current project baseline (aligned with the Flutter 3.44 `DependencyVersionChecker` warn thresholds, one notch below the official template): AGP 8.11.1 / Gradle 8.14 / KGP 2.2.20 / Java 17 in `android/app/build.gradle.kts` via `kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_17 } }`.
+- The official Flutter 3.44 template uses AGP 9.0.1 / Gradle 9.1.0 / KGP 2.3.20 / minSdk 24 / targetSdk 36. We intentionally stop short of AGP 9 because legacy plugins (e.g. open_filex bundles its own AGP 8.1.0 classpath) are unverified against it. Re-verify plugin compatibility before upgrading.
+- `compileSdk/minSdk/targetSdk/ndkVersion` must keep referencing the `flutter.*` constants — never hardcode. `android.newDsl=false` and `android.builtInKotlin=false` in `gradle.properties` are Flutter's official defaults (AGP 9 opts-out); do not remove.
+- Migration gotchas for the future AGP 9 bump: KGP 2.3 removes the `kotlinOptions` DSL (use `kotlin { compilerOptions {} }`); AGP 10 removes the legacy DSL/Variant API entirely (see the official AGP 9 release notes); the app module may omit an explicit `id("kotlin-android")` since the Flutter Gradle plugin auto-applies KGP when missing.
+
 ### Known Migrations
 
 - **Cursor behavior** (Flutter ≥ 3.41, PR #171796): Material interactive widgets (buttons, InkWell, FAB, chips, checkbox/switch/slider/radio, dropdowns, popup menus, list tiles) default to `WidgetStateMouseCursor.adaptiveClickable` (hand cursor on web only, arrow on desktop). This is deliberate desktop behavior, not a bug.
