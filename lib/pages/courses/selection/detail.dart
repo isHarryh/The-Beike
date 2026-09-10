@@ -224,15 +224,17 @@ class _CourseDetailCardState extends State<CourseDetailCard>
       _expansionController.removeStatusListener(_onExpansionStatusChanged);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         // Scroll the list to the details widget
+        // Only the vertical scroll position is animated
         final context = _detailsKey.currentContext;
-        if (context != null) {
-          Scrollable.ensureVisible(
-            context,
-            alignment: 0.25,
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeOut,
-          );
-        }
+        if (context == null) return;
+        final scrollable = Scrollable.maybeOf(context, axis: Axis.vertical);
+        if (scrollable == null) return;
+        scrollable.position.ensureVisible(
+          context.findRenderObject()!,
+          alignment: 0.25,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeOut,
+        );
       });
     }
   }

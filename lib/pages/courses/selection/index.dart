@@ -322,10 +322,10 @@ class _CourseSelectionPageState extends State<CourseSelectionPage> {
                         gradient: _selectedTerm != null
                             ? LinearGradient(
                                 colors: [
-                                  Theme.of(context).primaryColor,
+                                  Theme.of(context).colorScheme.primary,
                                   Theme.of(
                                     context,
-                                  ).primaryColor.withValues(alpha: 0.8),
+                                  ).colorScheme.primary.withValues(alpha: 0.8),
                                 ],
                               )
                             : null,
@@ -335,7 +335,7 @@ class _CourseSelectionPageState extends State<CourseSelectionPage> {
                                 BoxShadow(
                                   color: Theme.of(
                                     context,
-                                  ).primaryColor.withValues(alpha: 0.3),
+                                  ).colorScheme.primary.withValues(alpha: 0.3),
                                   blurRadius: 8,
                                   offset: const Offset(0, 4),
                                 ),
