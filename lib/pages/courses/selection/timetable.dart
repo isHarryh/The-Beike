@@ -98,31 +98,41 @@ class SelectionTimetablePanel extends StatefulWidget {
 
 class _SelectionTimetablePanelState extends State<SelectionTimetablePanel> {
   int _currentWeek = 1;
-  bool _weekInitialized = false;
+  String? _lastWantedSignature;
 
   @override
   void initState() {
     super.initState();
-    _initWeekIfNeeded();
+    _syncWeek();
   }
 
   @override
   void didUpdateWidget(SelectionTimetablePanel oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _initWeekIfNeeded();
+    _syncWeek();
   }
 
-  void _initWeekIfNeeded() {
+  void _syncWeek() {
     final data = widget.curriculumData;
     if (data == null) return;
 
-    final maxWeek = data.getMaxValidWeekIndex();
-    if (!_weekInitialized) {
-      _weekInitialized = true;
-      _currentWeek = _initialWeekOf(data);
-    } else if (_currentWeek > maxWeek) {
-      _currentWeek = maxWeek;
+    final signature = widget.wantedCourses
+        .map((course) => course.uniqueKey)
+        .join(',');
+    if (_lastWantedSignature == signature) {
+      _currentWeek = _currentWeek.clamp(1, data.getMaxValidWeekIndex());
+      return;
     }
+
+    _lastWantedSignature = signature;
+    if (widget.wantedCourses.isEmpty) {
+      _currentWeek = _initialWeekOf(data);
+      return;
+    }
+
+    final parse = parseWantedCourses(data, widget.wantedCourses);
+    _currentWeek =
+        _firstWeekWithOverlay(data, parse.items) ?? _initialWeekOf(data);
   }
 
   int _initialWeekOf(CurriculumIntegratedData data) {
@@ -134,8 +144,17 @@ class _SelectionTimetablePanelState extends State<SelectionTimetablePanel> {
     return 1;
   }
 
-  ScheduleParseResult _parseWantedCourses(CurriculumIntegratedData data) {
-    return parseWantedCourses(data, widget.wantedCourses);
+  int? _firstWeekWithOverlay(
+    CurriculumIntegratedData data,
+    List<ClassItem> overlay,
+  ) {
+    final maxWeek = data.getMaxValidWeekIndex();
+    for (int week = 1; week <= maxWeek; week++) {
+      if (overlay.any((classItem) => classItem.weeks.contains(week))) {
+        return week;
+      }
+    }
+    return null;
   }
 
   @override
@@ -143,15 +162,17 @@ class _SelectionTimetablePanelState extends State<SelectionTimetablePanel> {
     final data = widget.curriculumData;
     final isReady =
         !widget.isLoading && widget.errorMessage == null && data != null;
-    final parse = isReady ? _parseWantedCourses(data) : null;
-    final conflictCount = isReady
-        ? countConflictsInWeek(data, parse!.items, _currentWeek)
-        : 0;
+    final parse = isReady
+        ? parseWantedCourses(data, widget.wantedCourses)
+        : null;
+    final hasConflict = isReady
+        ? hasConflictInAnyWeek(data, parse!.items)
+        : false;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildHeader(conflictCount),
+        _buildHeader(hasConflict),
         const Divider(height: 1),
         Expanded(
           child: widget.isLoading
@@ -164,32 +185,25 @@ class _SelectionTimetablePanelState extends State<SelectionTimetablePanel> {
     );
   }
 
-  Widget _buildHeader(int conflictCount) {
+  Widget _buildHeader(bool hasConflict) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
       child: Row(
         children: [
-          Icon(
-            Icons.calendar_month,
-            size: 18,
-            color: Theme.of(context).colorScheme.primary,
-          ),
+          const Icon(Icons.calendar_month),
           const SizedBox(width: 8),
           Text(
             '课表预览',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const Spacer(),
-          if (conflictCount > 0)
+          if (hasConflict)
             Tooltip(
-              message: '当前周存在时间冲突，请点击冲突格子查看详情',
+              message: '存在时间冲突，请点击冲突格查看详情',
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 3,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.errorContainer,
                   borderRadius: BorderRadius.circular(12),
@@ -204,7 +218,7 @@ class _SelectionTimetablePanelState extends State<SelectionTimetablePanel> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '$conflictCount 处冲突',
+                      '存在冲突',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: Theme.of(context).colorScheme.onErrorContainer,
                         fontWeight: FontWeight.bold,

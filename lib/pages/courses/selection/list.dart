@@ -360,6 +360,7 @@ class _CourseListPageState extends State<CourseListPage>
       },
       style: FilledButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 12),
+        visualDensity: VisualDensity.compact,
         backgroundColor: hasConflict ? colorScheme.error : null,
         foregroundColor: hasConflict ? colorScheme.onError : null,
       ),
