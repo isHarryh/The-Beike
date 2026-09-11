@@ -1,11 +1,29 @@
+import 'package:dio/dio.dart' show CancelToken;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/provider.dart';
 import '../../services/sync/convert.dart';
+import '../../services/update/exceptions.dart';
 import '../../types/sync.dart';
 import '../../utils/app_bar.dart';
 import '../../utils/meta_info.dart';
+
+enum _DownloadPhase { downloading, downloaded, failed }
+
+class _DownloadTask {
+  final String url;
+  final String savePath;
+  final CancelToken cancelToken;
+  _DownloadPhase phase = _DownloadPhase.downloading;
+  int received = 0;
+  int? total;
+  String? error;
+
+  _DownloadTask({required this.url, required this.savePath})
+    : cancelToken = CancelToken();
+}
 
 class UpdatePage extends StatefulWidget {
   const UpdatePage({super.key});
@@ -19,11 +37,24 @@ class _UpdatePageState extends State<UpdatePage> {
   String? _error;
   ReleaseInfo? _releaseInfo;
   bool _expandOtherPlatforms = false;
+  _DownloadTask? _download;
 
   @override
   void initState() {
     super.initState();
     _checkUpdate();
+  }
+
+  @override
+  void dispose() {
+    final task = _download;
+    if (task != null) {
+      if (task.phase == _DownloadPhase.downloading) {
+        task.cancelToken.cancel('page disposed');
+      }
+      ServiceProvider.instance.updateService.deleteFile(task.savePath);
+    }
+    super.dispose();
   }
 
   Future<void> _checkUpdate() async {
@@ -84,6 +115,121 @@ class _UpdatePageState extends State<UpdatePage> {
       return false;
     } catch (e) {
       return false; // Fallback
+    }
+  }
+
+  Future<void> _startDownload(String url) async {
+    final release = _releaseInfo;
+    if (release == null) return;
+    final updateService = ServiceProvider.instance.updateService;
+
+    final current = _download;
+    if (current != null) {
+      if (current.phase == _DownloadPhase.downloading) return;
+      await updateService.deleteFile(current.savePath);
+    }
+
+    final version = release.stableVersion.replaceFirst('v', '');
+    final ext = MetaInfo.instance.platformName == 'android' ? 'apk' : 'exe';
+    final fileName = 'TheBeike-$version.$ext';
+
+    String savePath;
+    try {
+      savePath = await updateService.getSavePath(fileName);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('无法准备下载目录: $e')));
+      }
+      return;
+    }
+
+    final task = _DownloadTask(url: url, savePath: savePath);
+    setState(() {
+      _download = task;
+    });
+
+    try {
+      await updateService.downloadFile(
+        url: url,
+        savePath: savePath,
+        onProgress: (received, total) {
+          if (!mounted || _download != task) return;
+          setState(() {
+            task
+              ..received = received
+              ..total = total;
+          });
+        },
+        cancelToken: task.cancelToken,
+      );
+      if (!mounted || _download != task) return;
+      setState(() {
+        task.phase = _DownloadPhase.downloaded;
+      });
+    } catch (e) {
+      if (!mounted || _download != task) return;
+      await updateService.deleteFile(savePath);
+      if (task.cancelToken.isCancelled) {
+        setState(() {
+          _download = null;
+        });
+        return;
+      }
+      setState(() {
+        task
+          ..phase = _DownloadPhase.failed
+          ..error = e.toString();
+      });
+    }
+  }
+
+  void _cancelDownload() {
+    _download?.cancelToken.cancel('user cancelled');
+  }
+
+  Future<void> _clearDownload() async {
+    final task = _download;
+    if (task == null) return;
+    await ServiceProvider.instance.updateService.deleteFile(task.savePath);
+    if (mounted) {
+      setState(() {
+        _download = null;
+      });
+    }
+  }
+
+  Future<void> _install() async {
+    final task = _download;
+    if (task == null) return;
+    final isWindows = MetaInfo.instance.platformName == 'windows';
+
+    try {
+      await ServiceProvider.instance.updateService.install(task.savePath);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isWindows ? '安装程序已启动，当前应用会自动关闭' : '已发起安装，请在系统提示中完成安装',
+            ),
+          ),
+        );
+      }
+    } on UpdateServicePermissionDenied {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('需要"安装未知应用"权限才能安装更新'),
+          action: SnackBarAction(label: '去设置', onPressed: openAppSettings),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('安装失败: $e')));
+      }
     }
   }
 
@@ -179,6 +325,8 @@ class _UpdatePageState extends State<UpdatePage> {
       );
     }
 
+    final updateService = ServiceProvider.instance.updateService;
+    final canInstallInApp = updateService.supportsInAppUpdate && _hasUpdate;
     final currentPlatform = MetaInfo.instance.platformName.toLowerCase();
     final downloads = _releaseInfo!.stableDownloads;
     final currentEntry = downloads.entries
@@ -209,6 +357,11 @@ class _UpdatePageState extends State<UpdatePage> {
             title: _releaseInfo!.getDisplayPlatformName(currentEntry.key),
             sources: currentEntry.value,
             releaseInfo: _releaseInfo!,
+            downloadTask: _download,
+            onDownload: canInstallInApp ? _startDownload : null,
+            onCancel: _cancelDownload,
+            onInstall: _install,
+            onClear: _clearDownload,
           ),
         if (otherPlatforms.isNotEmpty)
           Card(
@@ -236,6 +389,7 @@ class _UpdatePageState extends State<UpdatePage> {
                               ),
                               sources: entry.value,
                               releaseInfo: _releaseInfo!,
+                              downloadTask: _download,
                             ),
                           ),
                         )
@@ -285,11 +439,21 @@ class _PlatformDownloadsCard extends StatelessWidget {
   final String title;
   final Map<String, String> sources;
   final ReleaseInfo releaseInfo;
+  final _DownloadTask? downloadTask;
+  final void Function(String url)? onDownload;
+  final VoidCallback? onCancel;
+  final VoidCallback? onInstall;
+  final VoidCallback? onClear;
 
   const _PlatformDownloadsCard({
     required this.title,
     required this.sources,
     required this.releaseInfo,
+    this.downloadTask,
+    this.onDownload,
+    this.onCancel,
+    this.onInstall,
+    this.onClear,
   });
 
   @override
@@ -314,6 +478,11 @@ class _PlatformDownloadsCard extends StatelessWidget {
                 tip: releaseInfo.getDisplayDownloadChannelTip(entry.key),
                 url: entry.value,
                 isRecommended: releaseInfo.getIsRecommendedChannel(entry.key),
+                downloadTask: downloadTask,
+                onDownload: onDownload,
+                onCancel: onCancel,
+                onInstall: onInstall,
+                onClear: onClear,
               ),
             ),
           ],
@@ -328,17 +497,28 @@ class _DownloadSourceTile extends StatelessWidget {
   final String tip;
   final String url;
   final bool isRecommended;
+  final _DownloadTask? downloadTask;
+  final void Function(String url)? onDownload;
+  final VoidCallback? onCancel;
+  final VoidCallback? onInstall;
+  final VoidCallback? onClear;
 
   const _DownloadSourceTile({
     required this.name,
     required this.tip,
     required this.url,
     required this.isRecommended,
+    this.downloadTask,
+    this.onDownload,
+    this.onCancel,
+    this.onInstall,
+    this.onClear,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final task = downloadTask?.url == url ? downloadTask : null;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -400,36 +580,129 @@ class _DownloadSourceTile extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          IconButton(
-            icon: const Icon(Icons.copy, size: 18),
-            tooltip: '复制链接',
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: url));
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('下载链接已复制')));
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.open_in_new, size: 20),
-            color: theme.colorScheme.primary,
-            tooltip: '打开链接',
-            onPressed: () async {
-              final uri = Uri.parse(url);
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
-              } else {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('无法打开下载链接')));
-                }
-              }
-            },
-          ),
+          _buildTrailing(context, task),
         ],
       ),
     );
+  }
+
+  Widget _buildTrailing(BuildContext context, _DownloadTask? task) {
+    final theme = Theme.of(context);
+    if (task != null) {
+      return switch (task.phase) {
+        _DownloadPhase.downloading => Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                SizedBox(
+                  width: 96,
+                  child: LinearProgressIndicator(
+                    value: task.total != null && task.total! > 0
+                        ? (task.received / task.total!)
+                              .clamp(0.0, 1.0)
+                              .toDouble()
+                        : null,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _formatProgress(task),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+            IconButton(
+              icon: const Icon(Icons.close, size: 20),
+              tooltip: '取消下载',
+              onPressed: onCancel,
+            ),
+          ],
+        ),
+        _DownloadPhase.downloaded => Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FilledButton.icon(
+              onPressed: onInstall,
+              icon: const Icon(Icons.download_done, size: 18),
+              label: const Text('安装'),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline, size: 20),
+              tooltip: '删除安装包',
+              onPressed: onClear,
+            ),
+          ],
+        ),
+        _DownloadPhase.failed => Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '下载失败',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.refresh, size: 20),
+              tooltip: '重试',
+              onPressed: onDownload == null ? null : () => onDownload!(url),
+            ),
+          ],
+        ),
+      };
+    }
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (onDownload != null)
+          IconButton(
+            icon: const Icon(Icons.download, size: 22),
+            color: theme.colorScheme.primary,
+            tooltip: '下载并安装',
+            onPressed: () => onDownload!(url),
+          ),
+        IconButton(
+          icon: const Icon(Icons.copy, size: 18),
+          tooltip: '复制链接',
+          onPressed: () {
+            Clipboard.setData(ClipboardData(text: url));
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('下载链接已复制')));
+          },
+        ),
+        IconButton(
+          icon: const Icon(Icons.open_in_new, size: 20),
+          color: theme.colorScheme.primary,
+          tooltip: '打开链接',
+          onPressed: () async {
+            final uri = Uri.parse(url);
+            if (await canLaunchUrl(uri)) {
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            } else {
+              if (context.mounted) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('无法打开下载链接')));
+              }
+            }
+          },
+        ),
+      ],
+    );
+  }
+
+  String _formatProgress(_DownloadTask task) {
+    final total = task.total;
+    if (total == null || total <= 0) {
+      return '${(task.received / 1024 / 1024).toStringAsFixed(1)} MB';
+    }
+    final percent = (task.received / total * 100).clamp(0, 100).floor();
+    return '$percent%';
   }
 }
 

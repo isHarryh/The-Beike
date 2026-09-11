@@ -25,16 +25,8 @@ class _NetDialDrawerState extends State<NetDialDrawer> {
   static const String _endpoint = 'https://api.ip.sb/geoip';
   static const Duration _timeout = Duration(seconds: 10);
 
-  String _buildUserAgent() {
-    try {
-      return 'TheBeike-GUI/${MetaInfo.instance.appVersion}';
-    } catch (_) {
-      return 'TheBeike-GUI/unknown';
-    }
-  }
-
   Map<String, String> _buildRequestHeaders() {
-    final userAgent = _buildUserAgent();
+    final userAgent = MetaInfo.instance.userAgent;
     return {
       'User-Agent': userAgent,
       'UC': userAgent,

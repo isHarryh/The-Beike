@@ -14,7 +14,7 @@ class SyncService extends BaseSyncService {
     _dio = Dio(
       BaseOptions(
         baseUrl: defaultBaseUrl,
-        headers: {'User-Agent': userAgent},
+        headers: {'User-Agent': MetaInfo.instance.userAgent},
         validateStatus: (status) => status != null && status < 500,
       ),
     );
@@ -22,8 +22,6 @@ class SyncService extends BaseSyncService {
 
   @override
   String get defaultBaseUrl => 'https://thebeike.cn/api';
-
-  String get userAgent => 'TheBeike-GUI/${MetaInfo.instance.appVersion}';
 
   @override
   set baseUrl(String url) {

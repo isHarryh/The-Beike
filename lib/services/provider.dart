@@ -10,6 +10,8 @@ import '/services/payment/base.dart';
 import '/services/payment/ustb_xyjf.dart';
 import '/services/sync/base.dart';
 import '/services/sync/sync_service.dart';
+import '/services/update/base.dart';
+import '/services/update/update_service.dart';
 import '/types/courses.dart';
 import '/types/payment.dart';
 import '/types/sync.dart';
@@ -33,6 +35,9 @@ class ServiceProvider extends ChangeNotifier {
   // Store Service
   late BaseStoreService _storeService;
 
+  // Update Service
+  late BaseUpdateService _updateService;
+
   // Singleton
   static final ServiceProvider _instance = ServiceProvider._internal();
   static ServiceProvider get instance => _instance;
@@ -43,6 +48,7 @@ class ServiceProvider extends ChangeNotifier {
     _paymentService = UstbXyjfService();
     _syncService = SyncService();
     _storeService = GeneralStoreService();
+    _updateService = UpdateService();
 
     _bindService(_coursesService);
     _bindService(_netService);
@@ -59,6 +65,8 @@ class ServiceProvider extends ChangeNotifier {
   BaseSyncService get syncService => _syncService;
 
   BaseStoreService get storeService => _storeService;
+
+  BaseUpdateService get updateService => _updateService;
 
   Future<void> initializeServices() async {
     await _storeService.initialize();

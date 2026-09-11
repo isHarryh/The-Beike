@@ -28,6 +28,9 @@ class MetaInfo {
     }
   }
 
+  /// The default User-Agent header used by network services.
+  String get userAgent => 'TheBeike-GUI/$appVersion';
+
   String _extractDeviceName(BaseDeviceInfo deviceInfo) {
     if (deviceInfo is AndroidDeviceInfo) {
       return deviceInfo.name;
