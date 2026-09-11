@@ -49,6 +49,8 @@ dependencies:
   dio_cookie_manager: ^3.5.0
   cookie_jar: ^4.0.9
   qr_flutter: ^4.1.0
+  open_filex: ^4.7.0
+  permission_handler: ^12.0.1
 
 dev_dependencies:
   flutter_test:
