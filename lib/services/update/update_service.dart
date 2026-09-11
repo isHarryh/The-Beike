@@ -36,6 +36,7 @@ class UpdateService extends BaseUpdateService {
     required String url,
     required String savePath,
     void Function(int received, int total)? onProgress,
+
     CancelToken? cancelToken,
   }) async {
     try {

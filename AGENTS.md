@@ -30,6 +30,8 @@ When creating or modifying Flutter UI pages in the `lib/pages/` directory, pleas
 
 When handling network requests using the `dio` package, please read the `/using-dio` skill first.
 
+App-identity `User-Agent` (`TheBeike-GUI/$appVersion`) has a single source: `MetaInfo.instance.userAgent` (initialized in `main.dart` before `runApp`). Sync, update checks, and dialing all reference it, so never construct this UA ad hoc. The browser-impersonation UAs in `drcom_net.dart`, `ustb_xyjf.dart`, and `ustb_byyt.dart` are protocol-level values those school servers expect, so do not "unify" them into the app UA.
+
 ## Knowledge
 
 ### Dart SDK Recent Notable Changes
@@ -50,6 +52,7 @@ When handling network requests using the `dio` package, please read the `/using-
 - The official Flutter 3.44 template uses AGP 9.0.1 / Gradle 9.1.0 / KGP 2.3.20 / minSdk 24 / targetSdk 36. We intentionally stop short of AGP 9 because legacy plugins (e.g. open_filex bundles its own AGP 8.1.0 classpath) are unverified against it. Re-verify plugin compatibility before upgrading.
 - `compileSdk/minSdk/targetSdk/ndkVersion` must keep referencing the `flutter.*` constants — never hardcode. `android.newDsl=false` and `android.builtInKotlin=false` in `gradle.properties` are Flutter's official defaults (AGP 9 opts-out); do not remove.
 - Migration gotchas for the future AGP 9 bump: KGP 2.3 removes the `kotlinOptions` DSL (use `kotlin { compilerOptions {} }`); AGP 10 removes the legacy DSL/Variant API entirely (see the official AGP 9 release notes); the app module may omit an explicit `id("kotlin-android")` since the Flutter Gradle plugin auto-applies KGP when missing.
+- When dependency resolution against Google/Maven stalls, maybe the user is in mainland China now. Android builds on some machine may require a user-level Gradle proxy in `~\.gradle\gradle.properties` if the user has a VPN software running.
 
 ### Known Migrations
 
