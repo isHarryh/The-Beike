@@ -235,7 +235,8 @@ class _CurriculumPageState extends State<CurriculumPage>
                   padding: EdgeInsets.only(right: 8.0),
                   child: Icon(Icons.login, size: 64, color: Colors.grey),
                 ),
-                onPressed: () => context.router.pushPath('/courses/account'),
+                onPressed: () =>
+                    context.router.navigatePath('/courses/account'),
               ),
               const SizedBox(height: 16),
               const Text(

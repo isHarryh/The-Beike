@@ -183,7 +183,7 @@ class _ExamPageState extends State<ExamPage> {
                 padding: const EdgeInsets.only(right: 8.0),
                 child: const Icon(Icons.login, size: 64, color: Colors.grey),
               ),
-              onPressed: () => context.router.pushPath('/courses/account'),
+              onPressed: () => context.router.navigatePath('/courses/account'),
             ),
             const SizedBox(height: 16),
             const Text(

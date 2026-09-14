@@ -8,7 +8,7 @@ This project `The-Beike` is a Flutter application.
 
 ### Foundations
 
-- **Pages and Routing**: The UI is structured around pages located in the `lib/pages/` directory. Router can be found in `lib/router.dart`.
+- **Pages and Routing**: The UI is structured around pages located in the `lib/pages/` directory. The router is defined in `lib/router.dart`, where `MainLayout` acts as a single persistent shell route (`MainLayoutRoute`) that hosts the side navigation (see `lib/utils/side_navigation.dart`) and renders every page inside a nested `AutoRouter`.
 - **Service System**: We use service system to interact with external data sources. All services are defined in the `lib/services/` directory, and a service provider (see `lib/services/provider.dart`) maintains the integration of all services.
 - **Data Types**: We use `json_annotation` package and our own abstract base class (see `lib/types/base.dart`) to define data types. After modifying data types, remember to run `dart run build_runner build --delete-conflicting-outputs` to generate code.
 
@@ -25,6 +25,14 @@ When creating or modifying Flutter UI pages in the `lib/pages/` directory, pleas
 
 1. **Unified App Bar Design**: Generally, each page should use our custom app bar defined in `lib/utils/app_bar.dart`.
 2. **Dynamic Theming**: It's recommended to use `Theme.of(context)` to obtain colors and text styles.
+
+### Working with Routing
+
+The app uses a single shell route (`MainLayoutRoute` at `/` in `lib/router.dart`) with a nested `AutoRouter`, so switching pages never rebuilds the shell:
+
+- **Adding a page**: register a child `NamedRouteDef` under `MainLayoutRoute` with a relative path (no leading `/`, e.g. `sync`, `more/settings`) and wrap its builder with `CommonPopWrapper` (use `DoubleBackToExitWrapper` for the home route). To show it in the side navigation, also add a `SideNavigationItem` to `SideNavigation.mainItems` or `SideNavigation.moreItems` in `lib/utils/side_navigation.dart`.
+- **Navigating**: from page code use `context.router.navigatePath('/xxx')` (absolute path; pops back to an existing page instead of duplicating it). Never use an absolute `pushPath`: it bubbles to the root router and pushes a duplicate shell. Use a relative `pushPath('more/anno')` only when you need to await the pop (e.g. refresh after returning).
+- **Back handling**: `CommonPopWrapper` and `DoubleBackToExitWrapper` are applied per child route in `lib/router.dart`, not inside page widgets.
 
 ### Working with dio
 

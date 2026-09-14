@@ -197,7 +197,7 @@ class _SyncPairingCardState extends State<SyncPairingCard> {
       );
 
       if (shouldLogin == true && mounted) {
-        context.router.pushPath('/courses/account');
+        context.router.navigatePath('/courses/account');
       }
       return;
     }

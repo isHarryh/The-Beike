@@ -107,7 +107,7 @@ class _SyncPageState extends State<SyncPage> {
                 _errorMessage = null;
                 _errorAction = null;
               });
-              context.router.pushPath('/courses/account');
+              context.router.navigatePath('/courses/account');
             },
           );
         }

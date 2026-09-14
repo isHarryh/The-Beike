@@ -423,7 +423,7 @@ class _ChooseLatestCardState extends State<ChooseLatestCard> {
                         size: 24,
                       ),
                       onPressed: () =>
-                          context.router.pushPath('/courses/account'),
+                          context.router.navigatePath('/courses/account'),
                     ),
                     const SizedBox(width: 8),
                     Expanded(

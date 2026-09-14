@@ -208,8 +208,9 @@ class _CourseSelectionPageState extends State<CourseSelectionPage> {
                                   color: Colors.grey,
                                 ),
                               ),
-                              onPressed: () =>
-                                  context.router.pushPath('/courses/account'),
+                              onPressed: () => context.router.navigatePath(
+                                '/courses/account',
+                              ),
                             ),
                             const SizedBox(height: 16),
                             const Text(

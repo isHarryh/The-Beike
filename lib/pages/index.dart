@@ -282,7 +282,7 @@ class _HomePageState extends State<HomePage> with PageStateMixin {
       children: [
         IconButton(
           onPressed: () async {
-            await context.router.pushPath('/more/anno');
+            await context.router.pushPath('more/anno');
             // Refresh count when returning from announcement page
             _loadUnreadAnnouncementsCount();
           },
@@ -325,7 +325,7 @@ class _HomePageState extends State<HomePage> with PageStateMixin {
           // Main callout card
           GestureDetector(
             onTap: () async {
-              await context.router.pushPath('/more/anno');
+              await context.router.pushPath('more/anno');
               // Refresh count when returning from announcement page
               _loadUnreadAnnouncementsCount();
             },
@@ -452,7 +452,7 @@ class _HomePageState extends State<HomePage> with PageStateMixin {
                   card.description,
                   card.icon,
                   card.color,
-                  () => context.router.pushPath(card.route),
+                  () => context.router.navigatePath(card.route),
                 ),
               ),
             ],
@@ -505,7 +505,7 @@ class _HomePageState extends State<HomePage> with PageStateMixin {
                     item.description,
                     item.icon,
                     item.color,
-                    () => context.router.pushPath(item.route),
+                    () => context.router.navigatePath(item.route),
                   ),
           ),
         ];
@@ -525,7 +525,7 @@ class _HomePageState extends State<HomePage> with PageStateMixin {
       margin: EdgeInsets.zero,
       child: InkWell(
         mouseCursor: WidgetStateMouseCursor.clickable,
-        onTap: () => context.router.pushPath('/courses/curriculum'),
+        onTap: () => context.router.navigatePath('/courses/curriculum'),
         borderRadius: BorderRadius.circular(12),
         child: Container(
           decoration: BoxDecoration(
@@ -837,7 +837,7 @@ class _HomePageState extends State<HomePage> with PageStateMixin {
               card.description,
               card.icon,
               card.color,
-              () => context.router.pushPath(card.route),
+              () => context.router.navigatePath(card.route),
             ),
           ),
         ];
@@ -918,7 +918,7 @@ class _HomePageState extends State<HomePage> with PageStateMixin {
               card.description,
               card.icon,
               card.color,
-              () => context.router.pushPath(card.route),
+              () => context.router.navigatePath(card.route),
             ),
           ),
         ];
@@ -936,7 +936,7 @@ class _HomePageState extends State<HomePage> with PageStateMixin {
       margin: EdgeInsets.zero,
       child: InkWell(
         mouseCursor: WidgetStateMouseCursor.clickable,
-        onTap: () => context.router.pushPath('/courses/account'),
+        onTap: () => context.router.navigatePath('/courses/account'),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
